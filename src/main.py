@@ -1,5 +1,3 @@
-# Slightly modified the code from "PhysicsGuidedNeuralNetworksforSpatio-temporalSuper-resolutionof TurbulentFlows" by Bao et al. (2022)
-
 from __future__ import print_function, division
 
 from tensorflow.keras.layers import *
@@ -10,7 +8,6 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 
 import datetime
-#from data_loader import DataLoader
 import numpy as np
 import os
 import tensorflow as tf
@@ -18,10 +15,6 @@ from sklearn.metrics import mean_squared_error
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2' 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-
-# a = np.load('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time/data90/u_les_all.npy')
-# b = np.load('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time/data90/v_les_all.npy')
-# c = np.load('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time/data90/w_les_all.npy')
 
 # Generating data
 
@@ -36,18 +29,6 @@ for sample in range(2600):
         x = np.linspace(0, 1, 32) * np.random.randn(1) # added some randomness across samples
         b[sample, i, :] = np.cos(8*np.pi*x)
 
-print(a.shape)
-print(b.shape)
-print(c.shape)
-maximum0 = a.max()
-minimum0 = a.min()
-print(maximum0,minimum0)
-maximum1 = b.max()
-minimum1 = b.min()
-print(maximum1,minimum1)
-maximum2 = c.max()
-minimum2 = c.min()
-print(maximum2,minimum2)
 
 dataset = np.zeros((2600,32,32,3))
 
@@ -56,19 +37,11 @@ for i in range(2600):
 	temp = a[i]#u
 	temp1 = b[i]#v
 	temp2 = c[i]#w
-	#u
-	#temp = (temp - minimum0)/(maximum0 - minimum0)
-	#v
-	#temp1 = (temp1 - minimum1)/(maximum1 - minimum1)
-	#w
-	#temp2 = (temp2 - minimum2)/(maximum2 - minimum2)
-	
 
 	for j in range(32):
 		for k in range(32):
 			dataset[i][j][k] = np.array([temp[j][k],temp1[j][k],temp2[j][k]])
 print(dataset.shape)
-#print(dataset)
 print(dataset.min())
 print(dataset.max())
 
@@ -77,11 +50,6 @@ print(dataset.max())
 
 
 ######################DNS##################################################
-# read in dns data from npy file
-# a = np.load('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time/data90/u_dns_all.npy')
-# b = np.load('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time/data90/v_dns_all.npy')
-# c = np.load('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time/data90/w_dns_all.npy')
-
 # Generating data
 
 a = np.ones(shape=(2600, 128, 128))
@@ -116,13 +84,6 @@ for i in range(2600):
 	temp = a[i]#u
 	temp1 = b[i]#v
 	temp2 = c[i]#w
-	#u
-	#temp = (temp - minimum0_dns)/(maximum0_dns - minimum0_dns)
-	#v		
-	#temp1 = (temp1 - minimum1_dns)/(maximum1_dns - minimum1_dns)
-	#w
-	#temp2 = (temp2 - minimum2_dns)/(maximum2_dns - minimum2_dns)
-
 		
 	for j in range(128):
 		for k in range(128):
@@ -131,8 +92,6 @@ for i in range(2600):
 print(dataset1.shape)
 print(dataset1.min())
 print(dataset1.max())
-
-
 
 def mean(vects):
 	u_all = vects[:,:,:,0]
@@ -151,8 +110,6 @@ def mean(vects):
 	vects = tf.stack([u,v,w],axis=3)
 
 	return vects
-
-
 
 
 ####build the model
