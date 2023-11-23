@@ -16,6 +16,8 @@ import os
 import tensorflow as tf
 from sklearn.metrics import mean_squared_error
 
+from extra import generate_image
+
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2' 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
@@ -29,12 +31,7 @@ a = np.ones(shape=(2600, 32, 32))
 c = np.zeros(shape=(2600, 32, 32))
 
 # generate 32x32 images of fluid flow
-b = np.zeros((2600, 32, 32))
-
-for sample in range(2600):
-    for i in range(32):
-        x = np.linspace(0, 1, 32) * np.random.randn(1) # added some randomness across samples
-        b[sample, i, :] = np.cos(8*np.pi*x)
+b = generate_image(2600, 32)
 
 print(a.shape)
 print(b.shape)
@@ -87,13 +84,8 @@ print(dataset.max())
 a = np.ones(shape=(2600, 128, 128))
 c = np.zeros(shape=(2600, 128, 128))
 
-# generate 128 images of fluid flow
-b = np.zeros((2600, 128, 128))
-
-for sample in range(2600):
-    for i in range(128):
-        x = np.linspace(0, 1, 128) * np.random.randn(1) # added some randomness across samples
-        b[sample, i, :] = np.cos(8*np.pi*x)
+# generate 128x128 images of fluid flow
+b = generate_image(2600, 128)
 
 
 print(a.shape)

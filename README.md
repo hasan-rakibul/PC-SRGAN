@@ -20,7 +20,8 @@ source ~/.venv/pinn/bin/activate
 
 Install necessary files on the virtual environment 
 ```bash
-python -m pip install -r requirements.txt 
+python -m pip install -r requirements-SRGAN.txt
+ # python -m pip install -r requirements.txt 
 ```
 
 # Others' code/data
