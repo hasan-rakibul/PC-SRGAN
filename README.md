@@ -1,6 +1,38 @@
 # physics-nn-fluid-dynamics
 
 # Setting up environment
+## Creating python virtual environment
+Inside your preferred directory (e.g.,`/scratch2/<ident>`):
+```bash
+python -m venv .env/pinn/
+```
+Activate virtual environment. Keep the activation command in your `.bashrc` file:
+```bash
+source /scratch2/<ident>/.env/pinn/bin/activate
+```
+
+Or, if you don't need the environment everytime. Youn can activate in each terminal session using the same command above.
+
+To deactivate the current environment:
+```bash
+deactivate
+```
+
+## CSIRO Bracewell
+Here the latest available python version is 3.9.4
+
+```bash
+module load python/3.9.4
+```
+Creat and activate a virtual environment (as described earlier).
+
+Install packages:
+```bash
+python -m pip install -r requirements-SRGAN.txt
+```
+
+## Local machine
+
 I first install python3.11 in Ubuntu 22.04.3 LTS  
 
 ```bash
@@ -8,13 +40,9 @@ sudo apt install python3.11
 sudo apt install python3.11-venv 
 ```
 
-Create virtual environment 
+Create and activate virtual environment.
 ```bash
 python3.11 -m venv ~/.venv/pinn
-```
-
-Activate virtual environment. The virtual environment needs to be activated every time you open a new terminal. Alternatively keep the activation command in your `.bashrc` file.
-```bash
 source ~/.venv/pinn/bin/activate 
 ```
 
@@ -59,3 +87,4 @@ python -m pip install -r requirements-Bao22.txt
 - [https://confluence.csiro.au/display/SC/Useful+information+for+new+users](https://confluence.csiro.au/display/SC/Useful+information+for+new+users)
 - [https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell](https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell)
 - [https://confluence.csiro.au/display/~mac581/Oddities+of+our+HPC](https://confluence.csiro.au/display/~mac581/Oddities+of+our+HPC)
+- [https://confluence.csiro.au/display/SC/Interactive+access+and+visualization](https://confluence.csiro.au/display/SC/Interactive+access+and+visualization)

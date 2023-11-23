@@ -18,7 +18,7 @@ from sklearn.metrics import mean_squared_error
 
 from extra import generate_image
 
-os.environ['TF_CPP_MIN_LOG_LEVEL']='2' 
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # a = np.load('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time/data90/u_les_all.npy')
@@ -48,7 +48,7 @@ print(maximum2,minimum2)
 
 dataset = np.zeros((2600,32,32,3))
 
-
+# maybe merge a, b, c to build the dataset
 for i in range(2600):
 	temp = a[i]#u
 	temp1 = b[i]#v
@@ -448,10 +448,11 @@ class SRGAN():
 			# Plot the progress
 			print("%d time: %s" % (epoch, elapsed_time))
 			
+			# COMMENTED FOR NOW - RAKIB
 			# If at save interval => save generated image samples
-			if epoch % 10 == 0 and epoch > 100 and No == 1:
-				self.discriminator.save_weights('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time1130/model_D/' + str(epoch) + 'save_0_500.h5')
-				self.generator.save_weights('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time1130/model_G/' + str(epoch) + 'save_0_500.h5')
+			# if epoch % 10 == 0 and epoch > 100 and No == 1:
+			# 	self.discriminator.save_weights('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time1130/model_D/' + str(epoch) + 'save_0_500.h5')
+			# 	self.generator.save_weights('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time1130/model_G/' + str(epoch) + 'save_0_500.h5')
 			
 			print("calculate all testing RMSE: ")
 			imgs_hr, imgs_lr = DNS,LES
@@ -485,4 +486,5 @@ class SRGAN():
 
 ######for training
 gan = SRGAN()
-gan.train(500, 65,1, dataset,dataset1)
+# gan.train(500, 65,1, dataset,dataset1)
+gan.train(5, 65,1, dataset,dataset1) # Rakib
