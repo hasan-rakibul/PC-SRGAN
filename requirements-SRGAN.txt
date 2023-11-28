@@ -7,3 +7,7 @@ PyYAML>=5.4.1
 typing>=3.7.4.3
 torchvision>=0.15.2+cu118
 natsort>=8.4.0
+
+# added by Rakib
+tensorboard
+packaging

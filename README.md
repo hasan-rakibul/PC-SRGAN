@@ -53,6 +53,25 @@ python -m pip install -r requirements-SRGAN.txt
 ```
 
 # Others' code/data
+## SRGAN
+- Download model weights and datasets
+```bash
+bash src/SRGAN_download_weights.sh SRGAN_x4-SRGAN_ImageNet
+bash src/SRGAN_download_weights.sh SRResNet_x4-SRGAN_ImageNet
+bash src/SRGAN_download_weights.sh DiscriminatorForVGG_x4-SRGAN_ImageNet
+bash src/SRGAN_download_datasets.sh SRGAN_ImageNet
+bash src/SRGAN_download_datasets.sh Set5
+```
+- Check configuration at `configs/train/*.yaml`
+- Split images
+```bash
+python src/SRGAN_split_images.py
+```
+- Train
+```bash
+python src/train_gan.py
+```
+
 ## Bao-UAI-PRU 
 - Dataset is unavailable
 - Code is in Tensorflow v1
@@ -88,3 +107,6 @@ python -m pip install -r requirements-Bao22.txt
 - [https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell](https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell)
 - [https://confluence.csiro.au/display/~mac581/Oddities+of+our+HPC](https://confluence.csiro.au/display/~mac581/Oddities+of+our+HPC)
 - [https://confluence.csiro.au/display/SC/Interactive+access+and+visualization](https://confluence.csiro.au/display/SC/Interactive+access+and+visualization)
+
+### Submitting batch job
+- [https://confluence.csiro.au/display/SC/Sample+Slurm+Job+Scripts](https://confluence.csiro.au/display/SC/Sample+Slurm+Job+Scripts)
