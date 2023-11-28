@@ -1,6 +1,7 @@
 OTHERS/
 tmp/
 data/
+samples/
 
 *.pth.tar
 
