@@ -110,3 +110,6 @@ python -m pip install -r requirements-Bao22.txt
 
 ### Submitting batch job
 - [https://confluence.csiro.au/display/SC/Sample+Slurm+Job+Scripts](https://confluence.csiro.au/display/SC/Sample+Slurm+Job+Scripts)
+- [https://confluence.csiro.au/pages/viewpage.action?pageId=1540489611](https://confluence.csiro.au/pages/viewpage.action?pageId=1540489611)
+- [https://confluence.csiro.au/display/VCCRI/SLURM](https://confluence.csiro.au/display/VCCRI/SLURM)
+- [https://confluence.csiro.au/display/SC/Requesting+resources+in+Slurm](https://confluence.csiro.au/display/SC/Requesting+resources+in+Slurm)

@@ -44,7 +44,7 @@ def load_dataset(config: Any, device: torch.device) -> CUDAPrefetcher:
 
 
 def build_model(config: Any, device: torch.device):
-    g_model = model.__dict__[config["MODEL"]["G"]["NAME"]](in_channels=config["MODEL"]["G"]["IN_CHANNELS"],
+    g_model = SRGAN_model.__dict__[config["MODEL"]["G"]["NAME"]](in_channels=config["MODEL"]["G"]["IN_CHANNELS"],
                                                            out_channels=config["MODEL"]["G"]["OUT_CHANNELS"],
                                                            channels=config["MODEL"]["G"]["CHANNELS"],
                                                            num_rcb=config["MODEL"]["G"]["NUM_RCB"])

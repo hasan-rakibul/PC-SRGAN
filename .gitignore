@@ -4,6 +4,7 @@ data/
 samples/
 
 *.pth.tar
+*.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

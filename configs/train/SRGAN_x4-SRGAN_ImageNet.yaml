@@ -89,8 +89,8 @@ TRAIN:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: "./data/Set5/X4/GT"
-    PAIRED_TEST_LR_IMAGES_DIR: "./data/Set5/X4/LR"
+    PAIRED_TEST_GT_IMAGES_DIR: "./data/fluid/high_res"
+    PAIRED_TEST_LR_IMAGES_DIR: "./data/fluid/low_res"
 
   # Test hyperparameters
   HYP:

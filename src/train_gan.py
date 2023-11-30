@@ -28,6 +28,10 @@ from torch.optim.swa_utils import AveragedModel
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
+# there's a RuntimeError due to CUDA compatibility, not solved but suppressed
+# import torch._dynamo
+# torch._dynamo.config.suppress_errors = True
+
 import SRGAN_model
 from SRGAN_dataset import CUDAPrefetcher, BaseImageDataset, PairedImageDataset
 from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
