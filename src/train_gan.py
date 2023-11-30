@@ -28,9 +28,9 @@ from torch.optim.swa_utils import AveragedModel
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-# there's a RuntimeError due to CUDA compatibility, not solved but suppressed
-# import torch._dynamo
-# torch._dynamo.config.suppress_errors = True
+# there's a RuntimeError due to CUDA compatibility with P100 GPU, not solved but suppressed
+import torch._dynamo
+torch._dynamo.config.suppress_errors = True
 
 import SRGAN_model
 from SRGAN_dataset import CUDAPrefetcher, BaseImageDataset, PairedImageDataset
@@ -178,12 +178,12 @@ def main():
         best_ssim = max(ssim, best_ssim)
         save_checkpoint({"epoch": epoch + 1,
                          "psnr": psnr,
-                         "ssim": ssim,
+                         "ssim": ssim,BaseImageDataset
                          "state_dict": g_model.state_dict(),
                          "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
                          "optimizer": g_optimizer.state_dict()},
                         f"epoch_{epoch + 1}.pth.tar",
-                        samples_dir,
+                        samples_dir,dataset
                         results_dir,
                         "g_best.pth.tar",
                         "g_last.pth.tar",

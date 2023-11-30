@@ -19,7 +19,7 @@ deactivate
 ```
 
 ## CSIRO Bracewell
-Here the latest available python version is 3.9.4
+Python version is **3.9.4**
 
 ```bash
 module load python/3.9.4
@@ -71,6 +71,10 @@ python src/SRGAN_split_images.py
 ```bash
 python src/train_gan.py
 ```
+- Test
+```bash
+python src/SRGAN_test.py --config_path ./configs/test/SRGAN_x4-SRGAN_ImageNet-Set5.yaml
+```
 
 ## Bao-UAI-PRU 
 - Dataset is unavailable
@@ -113,3 +117,5 @@ python -m pip install -r requirements-Bao22.txt
 - [https://confluence.csiro.au/pages/viewpage.action?pageId=1540489611](https://confluence.csiro.au/pages/viewpage.action?pageId=1540489611)
 - [https://confluence.csiro.au/display/VCCRI/SLURM](https://confluence.csiro.au/display/VCCRI/SLURM)
 - [https://confluence.csiro.au/display/SC/Requesting+resources+in+Slurm](https://confluence.csiro.au/display/SC/Requesting+resources+in+Slurm)
+- [https://confluence.csiro.au/display/SC/Running+jobs+in+an+interactive+batch+shell](https://confluence.csiro.au/display/SC/Running+jobs+in+an+interactive+batch+shell)
+- [https://confluence.csiro.au/display/GEES/HPC+Cheat+Sheet](https://confluence.csiro.au/display/GEES/HPC+Cheat+Sheet)
