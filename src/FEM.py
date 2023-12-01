@@ -7,8 +7,11 @@ import time
 import logging
 
 def generate_data(eps, K, b1, b2, elem_per_dim):
+
+    T = 0.5 # final time
+
     # BCs; L: left, R: right, U: up, B: bottom
-    u_L = 1
+    u_L = Expression('sin(pi*x[1])', degree=2)
     u_R = 0
     u_U = 0
     u_B = 0
@@ -32,7 +35,7 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
 
     # ---- G-alpha parameters
 
-    ro = 0.9
+    ro =1.
 
     am = 1/2*(3-ro)/(1+ro)
     af = 1/(1+ro)
@@ -91,7 +94,7 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
     F = am/(dt*gamma*af)*u*s*dx + dot(beta_vec,grad(u))*s*dx \
     + eps*dot(grad(u), grad(s))*dx \
     - K*u*u*(1-u)*s*dx - f_3*s*dx  \
-    - am/(dt*gamma*af)*u_n*s*dx - (1-am/gamma) *v_n*s*dx
+    - am/(dt*gamma*af)*u_n*s*dx - Constant(1-am/gamma) *v_n*s*dx
 
 
     # Boundary data 
@@ -119,11 +122,11 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
 
     bcs = [bc_L, bc_R, bc_U, bc_B]
 
-    file_prefix = 'data/reaction_diffusion_advection/mesh_' + str(elem_per_dim) + '/eps_' + str(eps) + '_K_' + str(K) + \
-    '_b1_' + str(b1) + '_b2_' + str(b2)
+    save_dir = 'data/reaction_diffusion_advection/mesh_' + str(elem_per_dim) + '/eps_' + str(eps) + '_K_' + str(K) + \
+    '_b1_' + str(b1) + '_b2_' + str(b2) + '/'
     # Create VTK files for visualization output
     
-    vtkfile_u = File(file_prefix + '.pvd')
+    vtkfile_u = File(save_dir + 'u.pvd')
 
     # Initial solution ------
 
@@ -152,26 +155,22 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
 
         coords = Fun_sp.tabulate_dof_coordinates()
         vec = u_n.vector().get_local()
-        outfile = open(file_prefix + ".txt", "w")
-        for coord, val in zip(coords, vec):
-            # print(coord[0], coord[1], val, file=outfile)
-        outfile.close()
+        with open(save_dir + "output.txt", "w") as outfile:
+            for coord, val in zip(coords, vec):
+                print(coord[0], coord[1], val, file=outfile)
+
+    return
 
 def main():
     start_time = time.time()
 
     ###### Problem's Parameters
-    # 
-    T = 0.5 # final time
 
     eps_range = np.linspace(1e-1, 1, 10) # diffusion coefficient
     K_range = np.linspace(0, 1, 5) # reaction rate
     
     r_range = np.linspace(0, 1, 5)
     theta_range = np.linspace(-np.pi/4, np.pi/4, 5)
-    
-    # set up logging
-    logging.basicConfig(filename='FEM-log.txt', level=logging.INFO, format='%(asctime)s %(message)s')
 
     count = 0
     total = len(eps_range) * len(K_range) * len(r_range) * len(theta_range)
@@ -183,15 +182,14 @@ def main():
                     b2 = r * np.sin(theta) # Velocity component in y direction
                     generate_data(eps, K, b1, b2, 8) # generating data for 8x8 mesh
                     generate_data(eps, K, b1, b2, 64) # generating data for 64x64 mesh
-                    
+
                     # status update to a log file
                     count += 1
-                    logging.info("--------------------------------------------------")
-
-                    logging.info(f"eps: {eps}, K: {K}, b1: {b1}, b2: {b2}")
-                    logging.info(f"Progress: {count}/{total}")
-                    logging.info(f"Time elapsed: {time.time() - start_time}")
-                    logging.info("--------------------------------------------------")
+                    with open('FEM_log.txt', 'a') as f:
+                        f.write(f"eps: {eps}, K: {K}, b1: {b1}, b2: {b2}\n")
+                        f.write(f"Progress: {count}/{total}\n")
+                        f.write(f"Time elapsed: {time.time() - start_time}\n")
+                        f.write("--------------------------------------------------\n")
 
 
 if __name__ == "__main__":
