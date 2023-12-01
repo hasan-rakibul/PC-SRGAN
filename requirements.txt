@@ -1,2 +1,2 @@
-# fenics-ffc
+fenics-ffc
 matplotlib
