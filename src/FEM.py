@@ -4,6 +4,7 @@ from fenics import *
 from dolfin import *
 import numpy as np
 import time
+import logging
 
 def generate_data(eps, K, b1, b2, elem_per_dim):
     # BCs; L: left, R: right, U: up, B: bottom
@@ -119,8 +120,8 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
     bcs = [bc_L, bc_R, bc_U, bc_B]
 
     file_prefix = 'data/reaction_diffusion_advection/mesh_' + str(elem_per_dim) + '/eps_' + str(eps) + '_K_' + str(K) + \
-    # Create VTK files for visualization output
     '_b1_' + str(b1) + '_b2_' + str(b2)
+    # Create VTK files for visualization output
     
     vtkfile_u = File(file_prefix + '.pvd')
 
@@ -146,14 +147,14 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
         # v_n.assign(solv_n)
             # print('u max: ', u.vector().array().max())
             
-        print('u max: ', np.max(np.array(u.vector()[:])))
+        # print('u max: ', np.max(np.array(u.vector()[:])))
         # u_n.assign(u)
 
         coords = Fun_sp.tabulate_dof_coordinates()
         vec = u_n.vector().get_local()
         outfile = open(file_prefix + ".txt", "w")
         for coord, val in zip(coords, vec):
-            print(coord[0], coord[1], val, file=outfile)
+            # print(coord[0], coord[1], val, file=outfile)
         outfile.close()
 
 def main():
@@ -169,6 +170,9 @@ def main():
     r_range = np.linspace(0, 1, 5)
     theta_range = np.linspace(-np.pi/4, np.pi/4, 5)
     
+    # set up logging
+    logging.basicConfig(filename='FEM-log.txt', level=logging.INFO, format='%(asctime)s %(message)s')
+
     count = 0
     total = len(eps_range) * len(K_range) * len(r_range) * len(theta_range)
     for eps in eps_range:
@@ -180,11 +184,14 @@ def main():
                     generate_data(eps, K, b1, b2, 8) # generating data for 8x8 mesh
                     generate_data(eps, K, b1, b2, 64) # generating data for 64x64 mesh
                     
-                    # status update
+                    # status update to a log file
                     count += 1
-                    print(f"Progress: {count}/{total}")
-                    print(f"Time elapsed: {time.time() - start_time}")
-                    print("--------------------------------------------------")
+                    logging.info("--------------------------------------------------")
+
+                    logging.info(f"eps: {eps}, K: {K}, b1: {b1}, b2: {b2}")
+                    logging.info(f"Progress: {count}/{total}")
+                    logging.info(f"Time elapsed: {time.time() - start_time}")
+                    logging.info("--------------------------------------------------")
 
 
 if __name__ == "__main__":
