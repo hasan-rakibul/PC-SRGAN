@@ -4,14 +4,25 @@ from fenics import *
 from dolfin import *
 import numpy as np
 import time
-import logging
+
+def update_initial_v(u_0, v_n, bcs_0, s, eps, K, beta_vec, f_3):
+    F_0 = ( v_n*s*dx + dot(beta_vec,grad(u_0))*s*dx
+    + eps*dot(grad(u_0), grad(s))*dx
+    - K*u_0*u_0*(1-u_0)*s*dx    # the term in the third line is the reaction nonlinear function
+    - f_3*s*dx )              # Sourcing term
+    
+    solve(F_0 == 0, v_n, bcs_0)
+   
+    return 
 
 def generate_data(eps, K, b1, b2, elem_per_dim):
 
-    T = 0.5 # final time
+    ###### Problem's Parameters
+    # 
+    T = 0.1 # final time
 
-    # BCs; L: left, R: right, U: up, B: bottom
-    u_L = Expression('sin(pi*x[1])', degree=2)
+    # BCs
+    u_L = 1
     u_R = 0
     u_U = 0
     u_B = 0
@@ -19,12 +30,10 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
     # Initial condition
 
     # u_0 = Expression('sin(x[0])*sin(x[1])', degree=2)
-    u_0 = Expression('exp(-10*x[0])', degree=2)
-    # u_0 = Constant(0)
+    u_0 = Constant(0) # Expression('exp(x[0])*sin(x[1])', degree=2)
 
     #######-------------------------------------------------------
-
-    n_ele = elem_per_dim    # no. of elements per dimension
+    n_ele = elem_per_dim   # no. of elements
     num_steps = 100    # number of time steps
     dt = T / num_steps # time step size
     # Define expressions used in variational forms
@@ -35,33 +44,12 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
 
     # ---- G-alpha parameters
 
-    ro =1.
+    ro = 0
 
-    am = 1/2*(3-ro)/(1+ro)
-    af = 1/(1+ro)
-    gamma = 0.5-af+am
+    am = 1 / 2 * (3-ro) / (1+ro)
+    af = 1 / (1+ro)
+    gamma = 0.5 - af + am
     #### 
-
-    def initial_v(u_0,v_n,bcs_0):
-        F_0 = v_n*s*dx + dot(beta_vec,grad(u_0))*s*dx \
-        + eps*dot(grad(u_0), grad(s))*dx \
-        - K*u_0*u_0*(1-u_0)*s*dx                # this term is the reaction nonlinear function
-        - f_3*s*dx                        # Sourcing term
-
-        solve(F_0 == 0, v_n, bcs_0)
-        v_n.assign(v_n)
-
-        return 
-
-    def update(u_n,v_n,u_af):
-
-        u_nn.vector()[:]=(u_af.vector()[:]-u_n.vector()[:])/af+u_n.vector()[:]
-        v_nn.vector()[:]= (u_nn.vector()[:]-u_n.vector()[:]-dt*v_n.vector()[:])/dt/gamma+v_n.vector()[:]
-
-        u_n.assign(u_nn)
-        v_n.assign(v_nn)
-        return
-
 
     x1 = 0
     x2 = 1
@@ -70,8 +58,7 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
     # rect = Rectangle(Point(x1, y1), Point(x2, y2))
     # mesh  = generate_mesh(rect1, n_ele)
 
-    mesh = UnitSquareMesh(n_ele,n_ele)
-
+    mesh = UnitSquareMesh(n_ele, n_ele)
 
     # Define function space
     P_order = 2     # Polynomial order
@@ -90,17 +77,9 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
 
     f_3 = Constant(0)
 
-
-    F = am/(dt*gamma*af)*u*s*dx + dot(beta_vec,grad(u))*s*dx \
-    + eps*dot(grad(u), grad(s))*dx \
-    - K*u*u*(1-u)*s*dx - f_3*s*dx  \
-    - am/(dt*gamma*af)*u_n*s*dx - Constant(1-am/gamma) *v_n*s*dx
-
-
     # Boundary data 
 
     tol = 1e-14
-
 
     def boundary_right(x, on_boundary):
         return on_boundary and near(x[0], x2, tol)
@@ -114,7 +93,6 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
     def boundary_up(x, on_boundary):
         return on_boundary and near(x[1], y2, tol)
 
-
     bc_L = DirichletBC(Fun_sp, u_L, boundary_left)
     bc_R = DirichletBC(Fun_sp, u_R, boundary_right)
     bc_B = DirichletBC(Fun_sp, u_B, boundary_bottom)
@@ -122,35 +100,50 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
 
     bcs = [bc_L, bc_R, bc_U, bc_B]
 
-    save_dir = 'data/reaction_diffusion_advection/mesh_' + str(elem_per_dim) + '/eps_' + str(eps) + '_K_' + str(K) + \
-    '_b1_' + str(b1) + '_b2_' + str(b2) + '/'
-    # Create VTK files for visualization output
-    
-    vtkfile_u = File(save_dir + 'u.pvd')
+    bc_L_0 = DirichletBC(Fun_sp, Constant(0), boundary_left)
+    bc_R_0 = DirichletBC(Fun_sp, Constant(0), boundary_right)
+    bc_B_0 = DirichletBC(Fun_sp, Constant(0), boundary_bottom)
+    bc_U_0 = DirichletBC(Fun_sp, Constant(0), boundary_up)
 
     # Initial solution ------
-
+    bcs_0 = [bc_L_0, bc_R_0, bc_U_0, bc_B_0]
     u_n = interpolate(u_0, Fun_sp)
-    initial_v(u_n,v_n,bcs)
+    bc_L.apply(u_n.vector())
+    update_initial_v(u_0=u_n, v_n=v_n, bcs_0=bcs_0, s=s, eps=eps, K=K, beta_vec=beta_vec, f_3=f_3) # updates v_n
 
     # Time-stepping
     t = 0
 
-    for counter in range(num_steps):
+    save_dir = 'data/reaction_diffusion_advection/mesh_' + str(elem_per_dim) + '/eps_' + str(eps) + '_K_' + str(K) + \
+        '_b1_' + str(b1) + '_b2_' + str(b2) + '/'
 
-        vtkfile_u << (u_n, t)
+    # Create VTK files for visualization output
+    vtkfile_u = File(save_dir + 'u.pvd')
+
+    for _ in range(num_steps):
 
         t += dt
+
+        F = (am/(dt*gamma*af)*u*s*dx + dot(beta_vec,grad(u))*s*dx
+        + eps*dot(grad(u), grad(s))*dx
+        - K*u*u*(1-u)*s*dx - f_3*s*dx
+        - am/(dt*gamma*af)*u_n*s*dx - (am/gamma-1) *v_n*s*dx)
+
         # Solve variational problem for time step
         solve(F == 0, u, bcs)    # here we solve for u^{n+\alpha_f}
+        vtkfile_u << (u, t)
 
         # Update previous solution
-        update(u_n,v_n,u)
+        u_nn.vector()[:]=(u.vector()[:]-u_n.vector()[:])/af+u_n.vector()[:]
+        v_nn.vector()[:]= (u_nn.vector()[:]-u_n.vector()[:]-dt*v_n.vector()[:])/(dt*gamma)+v_n.vector()[:]
+        u_n = u_nn
+        v_n = v_nn
 
         # v_n.assign(solv_n)
             # print('u max: ', u.vector().array().max())
             
-        # print('u max: ', np.max(np.array(u.vector()[:])))
+        print('u max: ', np.max(np.array(u.vector()[:])))
+        print('u_n max: ', np.max(np.array(u_n.vector()[:])))
         # u_n.assign(u)
 
         coords = Fun_sp.tabulate_dof_coordinates()
@@ -158,8 +151,6 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
         with open(save_dir + "output.txt", "w") as outfile:
             for coord, val in zip(coords, vec):
                 print(coord[0], coord[1], val, file=outfile)
-
-    return
 
 def main():
     start_time = time.time()
