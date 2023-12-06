@@ -260,19 +260,6 @@ class SRGAN():
 		
 		return cost_phy
 
-	def physical_loss_tr(self, y_true, y_pred):
-		u = y_pred[:,:,:,0]
-		v = y_pred[:,:,:,1]
-		w = y_pred[:,:,:,2]
-
-		u = tf.reshape(u,[-1])
-		v = tf.reshape(v,[-1])
-		w = tf.reshape(w,[-1])
-		
-		cost_phy = tf.reduce_mean(tf.square(u)) + tf.reduce_mean(tf.square(v)) + tf.reduce_mean(tf.square(w))
-		
-		return cost_phy
-
 
 		
 	def build_vgg(self):

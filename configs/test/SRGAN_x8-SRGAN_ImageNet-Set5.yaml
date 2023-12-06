@@ -2,20 +2,20 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: SRGAN_x4-SRGAN_ImageNet-Set5
+EXP_NAME: SRGAN_x8-SRGAN_ImageNet-Set5
 # random number seed
 SEED: 0
 # Super resolution magnification factor
-SCALE: 4
+SCALE: 8
 # run device model
 DEVICE_ID: 0
 # Model weights path
-MODEL_WEIGHTS_PATH: "./results/pretrained_models/SRGAN_x4-SRGAN_ImageNet.pth.tar"
+MODEL_WEIGHTS_PATH: "./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar"
 
 # Model define
 MODEL:
   G:
-    NAME: srresnet_x4
+    NAME: srresnet_x8
     IN_CHANNELS: 3
     OUT_CHANNELS: 3
     CHANNELS: 64
@@ -24,8 +24,8 @@ MODEL:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: "./data/Set5/X4/GT"
-    PAIRED_TEST_LR_IMAGES_DIR: "./data/Set5/X4/LR"
+    PAIRED_TEST_GT_IMAGES_DIR: "./data/Set5/X8/GT"
+    PAIRED_TEST_LR_IMAGES_DIR: "./data/Set5/X8/LR"
 
   # Test hyperparameters
   HYP:

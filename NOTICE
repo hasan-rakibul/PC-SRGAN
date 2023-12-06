@@ -10,9 +10,10 @@ Original Code License: Apache License 2.0 (see below)
 
 physics-nn-fluid-dynamics
 
-This project includes modifications to the original code, which is licensed under the Apache License 2.0. Below are the details of the modifications:
+This project includes modifications to the original code, which is licensed under the Apache License 2.0. Major modifications include:
 
-- 
+- Used completely different dataset (i.e., fluid dynamics data) and modified the code accordingly.
+- Added support for older GPU (e.g., P100) as the original code was failed to run with `triton` compiler.
 
 -------------------------------------------------------------------------
 

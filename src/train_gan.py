@@ -28,10 +28,6 @@ from torch.optim.swa_utils import AveragedModel
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-# there's a RuntimeError due to CUDA compatibility with P100 GPU, not solved but suppressed
-import torch._dynamo
-torch._dynamo.config.suppress_errors = True
-
 import SRGAN_model
 from SRGAN_dataset import CUDAPrefetcher, BaseImageDataset, PairedImageDataset
 from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
@@ -45,7 +41,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path",
                         type=str,
-                        default="./configs/train/SRGAN_x4-SRGAN_ImageNet.yaml",
+                        default="./configs/train/SRGAN_x8-SRGAN_ImageNet.yaml",
                         help="Path to train config file.")
     args = parser.parse_args()
 
@@ -77,7 +73,7 @@ def main():
     # Define the basic functions needed to start training
     train_data_prefetcher, paired_test_data_prefetcher = load_dataset(config, device)
     g_model, ema_g_model, d_model = build_model(config, device)
-    pixel_criterion, content_criterion, adversarial_criterion = define_loss(config, device)
+    pixel_criterion, content_criterion, adversarial_criterion, physics_criterion = define_loss(config, device)
     g_optimizer, d_optimizer = define_optimizer(g_model, d_model, config)
     g_scheduler, d_scheduler = define_scheduler(g_optimizer, d_optimizer, config)
 
@@ -147,6 +143,7 @@ def main():
               pixel_criterion,
               content_criterion,
               adversarial_criterion,
+              physics_criterion,
               g_optimizer,
               d_optimizer,
               epoch,
@@ -178,12 +175,12 @@ def main():
         best_ssim = max(ssim, best_ssim)
         save_checkpoint({"epoch": epoch + 1,
                          "psnr": psnr,
-                         "ssim": ssim,BaseImageDataset
+                         "ssim": ssim,
                          "state_dict": g_model.state_dict(),
                          "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
                          "optimizer": g_optimizer.state_dict()},
                         f"epoch_{epoch + 1}.pth.tar",
-                        samples_dir,dataset
+                        samples_dir,
                         results_dir,
                         "g_best.pth.tar",
                         "g_last.pth.tar",
@@ -267,16 +264,16 @@ def build_model(
 
     # compile model
     if config["MODEL"]["G"]["COMPILED"]:
-        g_model = torch.compile(g_model)
+        g_model = torch.compile(g_model, backend=config["BACKEND"])
     if config["MODEL"]["D"]["COMPILED"]:
-        d_model = torch.compile(d_model)
+        d_model = torch.compile(d_model, backend=config["BACKEND"])
     if config["MODEL"]["EMA"]["COMPILED"] and ema_g_model is not None:
-        ema_g_model = torch.compile(ema_g_model)
+        ema_g_model = torch.compile(ema_g_model, backend=config["BACKEND"])
 
     return g_model, ema_g_model, d_model
 
 
-def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.ContentLoss, nn.BCEWithLogitsLoss]:
+def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, nn.MSELoss]:
     if config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["NAME"] == "MSELoss":
         pixel_criterion = nn.MSELoss()
     else:
@@ -304,7 +301,9 @@ def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.C
     content_criterion = content_criterion.to(device)
     adversarial_criterion = adversarial_criterion.to(device)
 
-    return pixel_criterion, content_criterion, adversarial_criterion
+    physics_criterion = nn.MSELoss()
+
+    return pixel_criterion, content_criterion, adversarial_criterion, physics_criterion
 
 
 def define_optimizer(g_model: nn.Module, d_model: nn.Module, config: Any) -> [optim.Adam, optim.Adam]:
@@ -349,6 +348,7 @@ def train(
         pixel_criterion: nn.L1Loss,
         content_criterion: SRGAN_model.ContentLoss,
         adversarial_criterion: nn.BCEWithLogitsLoss,
+        physics_criterion,
         g_optimizer: optim.Adam,
         d_optimizer: optim.Adam,
         epoch: int,
@@ -377,6 +377,7 @@ def train(
     pixel_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["WEIGHT"]).to(device)
     feature_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["WEIGHT"]).to(device)
     adversarial_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["ADVERSARIAL_LOSS"]["WEIGHT"]).to(device)
+    physics_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["PHYSICS_LOSS"]["WEIGHT"]).to(device)
 
     # Initialize data batches
     batch_index = 0
@@ -428,14 +429,20 @@ def train(
         # Calculate the perceptual loss of the generator, mainly including pixel loss, feature loss and confrontation loss
         with amp.autocast():
             sr = g_model(lr)
+            # print(sr.shape, gt.shape, lr.shape) # ([16, 3, 96, 96]) ([16, 3, 96, 96]) ([16, 3, 24, 24])
             pixel_loss = pixel_criterion(sr, gt)
             feature_loss = content_criterion(sr, gt)
             adversarial_loss = adversarial_criterion(d_model(sr), real_label)
             pixel_loss = torch.sum(torch.mul(pixel_weight, pixel_loss))
             feature_loss = torch.sum(torch.mul(feature_weight, feature_loss))
             adversarial_loss = torch.sum(torch.mul(adversarial_weight, adversarial_loss))
+
+            # adding physics loss
+            physics_loss = physics_criterion(sr, gt)
+            physics_loss = torch.sum(torch.mul(physics_weight, physics_loss))
+
             # Compute generator total loss
-            g_loss = pixel_loss + feature_loss + adversarial_loss
+            g_loss = pixel_loss + feature_loss + adversarial_loss + physics_loss
         # Backpropagation generator loss on generated samples
         scaler.scale(g_loss).backward()
         # update generator model weights

@@ -29,6 +29,19 @@ conda install -c conda-forge fenics
 ```
 And it worked like a charm!
 
+In **CSIRO Bracewell**, I can have minoconda using `module load miniconda3`
+
+As I should not install in home directory, let's change them in conda configuration.
+
+`conda config` will create a `.condarc` file in home directory. Open it and add the following lines:
+```bash
+envs_dirs:
+  - /scratch2/<ident>/.conda/envs
+pkgs_dirs:
+  - /scratch2/<ident>/.conda/pkgs
+```
+Then install as above.
+  
 ## CSIRO Bracewell
 Python version is **3.9.4**
 
@@ -68,8 +81,14 @@ python -m pip install -r requirements.txt
 - Download model weights and datasets
 ```bash
 bash src/SRGAN_download_weights.sh SRGAN_x4-SRGAN_ImageNet
+bash src/SRGAN_download_weights.sh SRGAN_x8-SRGAN_ImageNet
+
 bash src/SRGAN_download_weights.sh SRResNet_x4-SRGAN_ImageNet
+bash src/SRGAN_download_weights.sh SRResNet_x8-SRGAN_ImageNet
+
 bash src/SRGAN_download_weights.sh DiscriminatorForVGG_x4-SRGAN_ImageNet
+bash src/SRGAN_download_weights.sh DiscriminatorForVGG_x8-SRGAN_ImageNet
+
 bash src/SRGAN_download_datasets.sh SRGAN_ImageNet
 bash src/SRGAN_download_datasets.sh Set5
 ```
@@ -118,9 +137,10 @@ python -m pip install -r requirements-Bao22.txt
 
 ## CSIRO Cluster
 - [https://confluence.csiro.au/display/SC/Useful+information+for+new+users](https://confluence.csiro.au/display/SC/Useful+information+for+new+users)
-- [https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell](https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell)
 - [https://confluence.csiro.au/display/~mac581/Oddities+of+our+HPC](https://confluence.csiro.au/display/~mac581/Oddities+of+our+HPC)
 - [https://confluence.csiro.au/display/SC/Interactive+access+and+visualization](https://confluence.csiro.au/display/SC/Interactive+access+and+visualization)
+- Configure VSCode: [https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell](https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell)
+- Configure Conda: [https://confluence.csiro.au/display/IMT/Conda+and+python+in+HPC](https://confluence.csiro.au/display/IMT/Conda+and+python+in+HPC)
 
 ### Submitting batch job
 - [https://confluence.csiro.au/display/SC/Sample+Slurm+Job+Scripts](https://confluence.csiro.au/display/SC/Sample+Slurm+Job+Scripts)

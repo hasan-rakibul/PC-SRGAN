@@ -3,13 +3,18 @@
 
 
 # experiment name
-EXP_NAME: SRGAN_x4-SRGAN_ImageNet
+EXP_NAME: SRGAN_x8-SRGAN_ImageNet
 # random number seed
 SEED: 0
 # super resolution magnification factor
-SCALE: 4
+SCALE: 8
 # run device model
-DEVICE_ID: 0
+DEVICE_ID: 3
+
+# default: inductor, which may be better, but it is not supported by the P100 GPU in Bracewell
+BACKEND: eager
+# BACKEND: aot_eager
+# BACKEND: inductor
 
 # Model define
 MODEL:
@@ -18,12 +23,12 @@ MODEL:
     DECAY: 0.999
     COMPILED: True
   G:
-    NAME: srresnet_x4
+    NAME: srresnet_x8
     IN_CHANNELS: 3
     OUT_CHANNELS: 3
     CHANNELS: 64
     NUM_RCB: 16
-    COMPILED: True
+    COMPILED: False
   D:
     NAME: discriminator_for_vgg
     IN_CHANNELS: 3
@@ -39,7 +44,7 @@ TRAIN:
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
-    PRETRAINED_G_MODEL: "./results/pretrained_models/SRResNet_x4-SRGAN_ImageNet.pth.tar"
+    PRETRAINED_G_MODEL: "./results/pretrained_models/SRResNet_x8-SRGAN_ImageNet.pth.tar"
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
     RESUMED_D_MODEL: ""
@@ -84,6 +89,9 @@ TRAIN:
     ADVERSARIAL_LOSS:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
+    PHYSICS_LOSS:
+      NAME: MSELoss
+      WEIGHT: [ 100.0 ]
 
   PRINT_FREQ: 100
 
