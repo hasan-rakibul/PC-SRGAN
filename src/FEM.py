@@ -15,7 +15,10 @@ def update_initial_v(u_0, v_n, bcs_0, s, eps, K, beta_vec, f_3):
    
     return 
 
-def generate_data(eps, K, b1, b2, elem_per_dim):
+def generate_data(eps, K, r, theta, elem_per_dim, save_as):
+
+    b1 = r * np.cos(theta) # Velocity component in x direction
+    b2 = r * np.sin(theta) # Velocity component in y direction
 
     ###### Problem's Parameters
     # 
@@ -114,13 +117,12 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
     # Time-stepping
     t = 0
 
-    save_dir = 'data/reaction_diffusion_advection/mesh_' + str(elem_per_dim) + '/eps_' + str(eps) + '_K_' + str(K) + \
-        '_b1_' + str(b1) + '_b2_' + str(b2) + '/'
+    save_dir = 'data/reaction_diffusion_advection/mesh_' + str(elem_per_dim) + '/' + save_as + '/'
 
-    # Create VTK files for visualization output
-    vtkfile_u = File(save_dir + 'u.pvd')
+    # Create VTK files for visualisation
+    vtkfile_u_n = File(save_dir + 'u_n.pvd')
 
-    for _ in range(num_steps):
+    for i_step in range(num_steps):
 
         t += dt
 
@@ -131,7 +133,7 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
 
         # Solve variational problem for time step
         solve(F == 0, u, bcs)    # here we solve for u^{n+\alpha_f}
-        vtkfile_u << (u, t)
+        vtkfile_u_n << (u_n, t)
 
         # Update previous solution
         u_nn.vector()[:]=(u.vector()[:]-u_n.vector()[:])/af+u_n.vector()[:]
@@ -142,15 +144,16 @@ def generate_data(eps, K, b1, b2, elem_per_dim):
         # v_n.assign(solv_n)
             # print('u max: ', u.vector().array().max())
             
-        print('u max: ', np.max(np.array(u.vector()[:])))
-        print('u_n max: ', np.max(np.array(u_n.vector()[:])))
+        # print('u max: ', np.max(np.array(u.vector()[:])))
+        # print('u_n max: ', np.max(np.array(u_n.vector()[:])))
         # u_n.assign(u)
 
-        coords = Fun_sp.tabulate_dof_coordinates()
-        vec = u_n.vector().get_local()
-        with open(save_dir + "output.txt", "w") as outfile:
-            for coord, val in zip(coords, vec):
-                print(coord[0], coord[1], val, file=outfile)
+        # coords = Fun_sp.tabulate_dof_coordinates()
+        # vec = u_n.vector().get_local()
+
+        # with open(save_dir + "output_{0}.txt".format(i_step), "w") as outfile:
+        #     for coord, val in zip(coords, vec):
+        #         print(coord[0], coord[1], val, file=outfile)
 
 def main():
     start_time = time.time()
@@ -165,19 +168,18 @@ def main():
 
     count = 0
     total = len(eps_range) * len(K_range) * len(r_range) * len(theta_range)
-    for eps in eps_range:
-        for K in K_range:
-            for r in r_range:
-                for theta in theta_range:
-                    b1 = r * np.cos(theta) # Velocity component in x direction
-                    b2 = r * np.sin(theta) # Velocity component in y direction
-                    generate_data(eps, K, b1, b2, 8) # generating data for 8x8 mesh
-                    generate_data(eps, K, b1, b2, 64) # generating data for 64x64 mesh
+    for i_eps, eps in enumerate(eps_range):
+        for i_K, K in enumerate(K_range):
+            for i_r, r in enumerate(r_range):
+                for i_theta, theta in enumerate(theta_range):
+                    save_as = 'eps' + str(i_eps) + '_K' + str(i_K) + '_r' + str(i_r) + '_theta' + str(i_theta)
+                    generate_data(eps, K, r, theta, 7, save_as) # generating data for 7x7 mesh
+                    generate_data(eps, K, r, theta, 63, save_as) # generating data for 63x63 mesh
 
                     # status update to a log file
                     count += 1
                     with open('FEM_log.txt', 'a') as f:
-                        f.write(f"eps: {eps}, K: {K}, b1: {b1}, b2: {b2}\n")
+                        f.write(f"eps: {eps}, K: {K}, r: {r}, theta: {theta}\n")
                         f.write(f"Progress: {count}/{total}\n")
                         f.write(f"Time elapsed: {time.time() - start_time}\n")
                         f.write("--------------------------------------------------\n")
