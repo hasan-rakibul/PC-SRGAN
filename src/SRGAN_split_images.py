@@ -21,25 +21,26 @@ from tqdm import tqdm
 
 
 def main():
-    args = {
-        "inputs_dir": "./data/SRGAN_ImageNet",  # Path to input image directory.
-        "output_dir": "./data/SRGAN_ImageNet_train_GT_sub",  # Path to generator image directory.
-        "crop_size": 128,  # Crop image size from raw image.
-        "step": 64,  # Step size of sliding window.
-        "thresh_size": 0,  # Threshold size. If the remaining image is less than the threshold, it will not be cropped.
-        "num_workers": 10  # How many threads to open at the same time.
-    }
-    split_images(args)
-
     # args = {
-    #     "inputs_dir": "./data/DIV2K_train_HR",  # Path to input image directory.
-    #     "output_dir": "./data/DIV2K_train_GT_sub",  # Path to generator image directory.
+    #     "inputs_dir": "./data/SRGAN_ImageNet",  # Path to input image directory.
+    #     "output_dir": "./data/SRGAN_ImageNet_train_GT_sub",  # Path to generator image directory.
     #     "crop_size": 128,  # Crop image size from raw image.
     #     "step": 64,  # Step size of sliding window.
     #     "thresh_size": 0,  # Threshold size. If the remaining image is less than the threshold, it will not be cropped.
-    #     "num_workers": 10  # How many threads to open at the same time.
+    #     "num_workers": 10,  # How many threads to open at the same time.
+    #     "img_type": "npy" # added by Rakib
     # }
     # split_images(args)
+
+    args = {
+        "inputs_dir": "./data/reaction_diffusion_advection/processed/mesh_8",  # Path to input image directory.
+        "output_dir": "./data/reaction_diffusion_advection/processed/mesh_8_sub",  # Path to generator image directory.
+        "crop_size": 128,  # Crop image size from raw image.
+        "step": 64,  # Step size of sliding window.
+        "thresh_size": 0,  # Threshold size. If the remaining image is less than the threshold, it will not be cropped.
+        "num_workers": 10,  # How many threads to open at the same time.
+    }
+    split_images(args)
 
 
 def split_images(args: dict):
@@ -59,7 +60,7 @@ def split_images(args: dict):
         print(f"Create {output_dir} successful.")
     else:
         print(f"{output_dir} already exists.")
-        sys.exit(1)
+        # sys.exit(1)
 
     # Get all image paths
     image_file_paths = os.listdir(inputs_dir)
@@ -91,7 +92,10 @@ def worker(image_file_path: str, args: dict):
     thresh_size = args["thresh_size"]
 
     image_name, extension = os.path.splitext(os.path.basename(image_file_path))
-    image = cv2.imread(os.path.join(inputs_dir, image_file_path), cv2.IMREAD_UNCHANGED)
+    if extension == ".npy":
+        image = np.load(os.path.join(inputs_dir, image_file_path))
+    else:
+        image = cv2.imread(os.path.join(inputs_dir, image_file_path), cv2.IMREAD_UNCHANGED)
 
     image_height, image_width = image.shape[0:2]
     image_height_space = np.arange(0, image_height - crop_size + 1, step)

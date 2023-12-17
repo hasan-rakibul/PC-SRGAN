@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def generate_image(num, res, save_dir):
+def generate_images(num, res, save_dir):
     '''Genera 'num' number of 'res x res' images'''
 
     # np.random.seed(100) # fixing seed to generate similar image between low and high resolution
@@ -21,8 +21,8 @@ def generate_image(num, res, save_dir):
     return b
 
 def main():
-    low_res = generate_image(100, 32, save_dir='data/fluid/low_res/')
-    high_res = generate_image(100, 128, save_dir='data/fluid/high_res/')
+    _ = generate_images(100, 32, save_dir='data/fluid/low_res/')
+    _ = generate_images(100, 128, save_dir='data/fluid/high_res/')
 
 if __name__ == '__main__':
     main()

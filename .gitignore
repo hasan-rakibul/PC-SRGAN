@@ -2,9 +2,11 @@ OTHERS/
 tmp/
 data/
 samples/
+results/
 
 *.pth.tar
 *.out
+src/PyTorch_gradients.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

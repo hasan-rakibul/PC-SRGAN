@@ -104,6 +104,7 @@ python src/train_gan.py
 - Test
 ```bash
 python src/SRGAN_test.py --config_path ./configs/test/SRGAN_x4-SRGAN_ImageNet-Set5.yaml
+python src/SRGAN_test.py --config_path ./configs/test/SRGAN_x8-SRGAN_ImageNet-Set5.yaml
 ```
 
 ## Bao-UAI-PRU 

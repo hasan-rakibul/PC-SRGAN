@@ -34,10 +34,10 @@ feature_extractor_net_cfgs: Dict[str, List[Union[str, int]]] = {
 }
 
 
-def _make_layers(net_cfg_name: str, batch_norm: bool = False) -> nn.Sequential:
+def _make_layers(net_cfg_name: str, batch_norm: bool = False, in_channels: int = 1) -> nn.Sequential:
     net_cfg = feature_extractor_net_cfgs[net_cfg_name]
     layers: nn.Sequential[nn.Module] = nn.Sequential()
-    in_channels = 3
+    in_channels = in_channels
     for v in net_cfg:
         if v == "M":
             layers.append(nn.MaxPool2d((2, 2), (2, 2)))
@@ -61,9 +61,10 @@ class _FeatureExtractor(nn.Module):
             self,
             net_cfg_name: str = "vgg19",
             batch_norm: bool = False,
-            num_classes: int = 1000) -> None:
+            num_classes: int = 1000,
+            in_channels: int = 3) -> None:
         super(_FeatureExtractor, self).__init__()
-        self.features = _make_layers(net_cfg_name, batch_norm)
+        self.features = _make_layers(net_cfg_name, batch_norm, in_channels)
 
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
 
@@ -137,7 +138,7 @@ class SRResNet(nn.Module):
             for _ in range(int(math.log(upscale, 2))):
                 upsampling.append(_UpsampleBlock(channels, 2))
         else:
-            raise NotImplementedError(f"Upscale factor `{upscale}` is not support.")
+            raise NotImplementedError(f"Upscale factor `{upscale}` is not supported.")
         self.upsampling = nn.Sequential(*upsampling)
 
         # reconstruction block
@@ -161,7 +162,7 @@ class SRResNet(nn.Module):
         x = self.trunk(conv1)
         x = self.conv2(x)
         x = torch.add(x, conv1)
-        x = self.upsampling(x)
+        x = self.upsampling(x) # low resolution to high resolution
         x = self.conv3(x)
 
         x = torch.clamp_(x, 0.0, 1.0)
@@ -251,13 +252,12 @@ class _UpsampleBlock(nn.Module):
         super(_UpsampleBlock, self).__init__()
         self.upsample_block = nn.Sequential(
             nn.Conv2d(channels, channels * upscale_factor * upscale_factor, (3, 3), (1, 1), (1, 1)),
-            nn.PixelShuffle(upscale_factor),
+            nn.PixelShuffle(upscale_factor), 
             nn.PReLU(),
         )
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.upsample_block(x)
-
         return x
 
 
@@ -281,10 +281,11 @@ class ContentLoss(nn.Module):
             feature_nodes: list,
             feature_normalize_mean: list,
             feature_normalize_std: list,
+            in_channels: int,
     ) -> None:
         super(ContentLoss, self).__init__()
         # Define the feature extraction model
-        model = _FeatureExtractor(net_cfg_name, batch_norm, num_classes)
+        model = _FeatureExtractor(net_cfg_name, batch_norm, num_classes, in_channels)
         # Load the pre-trained model
         if model_weights_path == "":
             model = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1)

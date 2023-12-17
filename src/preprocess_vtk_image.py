@@ -2,6 +2,7 @@ import os
 import vtk
 from vtk.util.numpy_support import vtk_to_numpy
 import numpy as np
+from natsort import natsorted
 
 def main():
     data_dir = 'data/reaction_diffusion_advection/'
@@ -9,15 +10,17 @@ def main():
         print('Directory does not exist')
         return
 
+    save_in_subfolder = True
+
     mesh_dir = os.listdir(data_dir)
     for mesh in mesh_dir:
         folders = os.listdir(os.path.join(data_dir, mesh))
-        for folder in folders:
-            all_files = os.listdir(os.path.join(data_dir, mesh, folder))
+        for index, folder in enumerate(folders):
+            all_files = natsorted(os.listdir(os.path.join(data_dir, mesh, folder)))
             vtu_files = [file for file in all_files if file.endswith('.vtu')]
-            for i, file in enumerate(vtu_files):
+            for file in vtu_files:
                 file_with_path = os.path.join(data_dir, mesh, folder, file)
-                print('Working on:', file_with_path)
+                print('Working on mesh:', mesh, '\tfolder:', folder, '\tFile:', file)
                 
                 reader = vtk.vtkXMLUnstructuredGridReader()
                 reader.SetFileName(file_with_path)
@@ -40,10 +43,18 @@ def main():
                 for i in range(len(indices_x)):
                     data[indices_x[i], indices_y[i]] = point_data[i]
 
-                save_dir = os.path.join(data_dir, 'processed/', mesh, folder)
+                if save_in_subfolder:
+                    save_dir = os.path.join(data_dir, 'processed/', mesh, folder)
+                else:
+                    save_dir = os.path.join(data_dir, 'processed/', mesh)
+                
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
-                np.save(os.path.join(save_dir, file[:-4] + '.npy'), data) # file[:-4] removes the .vtu extension
+                
+                if save_in_subfolder:
+                    np.save(os.path.join(save_dir, file[:-4] + '.npy'), data)
+                else:
+                    np.save(os.path.join(save_dir, 'Case-' + str(index) + '_' + file[:-4] + '.npy'), data) # file[:-4] removes the .vtu extension
 
 if __name__ == '__main__':
     main()

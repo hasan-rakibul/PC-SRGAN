@@ -1,4 +1,4 @@
-# Slightly modified the code from "PhysicsGuidedNeuralNetworksforSpatio-temporalSuper-resolutionof TurbulentFlows" by Bao et al. (2022)
+# Slightly modified the code from "Physics Guided Neural Networks for Spatio-temporal Super-resolution of Turbulent Flows" by Bao et al. (2022)
 
 from __future__ import print_function, division
 
@@ -14,9 +14,11 @@ import datetime
 import numpy as np
 import os
 import tensorflow as tf
-from sklearn.metrics import mean_squared_error
+# from sklearn.metrics import mean_squared_error
 
-from generate_images import generate_image
+from generate_images import generate_images
+
+# tf.enable_eager_execution()
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -26,12 +28,13 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 # c = np.load('/content/drive/My Drive/PGSRN(Model and Data)/PGSRN_across_time/data90/w_les_all.npy')
 
 # Generating data
+num_images = 2600
 
-a = np.ones(shape=(2600, 32, 32))
-c = np.zeros(shape=(2600, 32, 32))
+a = np.ones(shape=(num_images, 32, 32))
+c = np.zeros(shape=(num_images, 32, 32))
 
 # generate 32x32 images of fluid flow
-b = generate_image(2600, 32, save_dir=None)
+b = generate_images(num_images, 32, save_dir=None)
 
 print(a.shape)
 print(b.shape)
@@ -46,10 +49,10 @@ maximum2 = c.max()
 minimum2 = c.min()
 print(maximum2,minimum2)
 
-dataset = np.zeros((2600,32,32,3))
+dataset = np.zeros((num_images,32,32,3))
 
 # maybe merge a, b, c to build the dataset
-for i in range(2600):
+for i in range(num_images):
 	temp = a[i]#u
 	temp1 = b[i]#v
 	temp2 = c[i]#w
@@ -81,17 +84,17 @@ print(dataset.max())
 
 # Generating data
 
-a = np.ones(shape=(2600, 128, 128))
-c = np.zeros(shape=(2600, 128, 128))
+a = np.ones(shape=(num_images, 128, 128))
+c = np.zeros(shape=(num_images, 128, 128))
 
 # generate 128x128 images of fluid flow
-b = generate_image(2600, 128, save_dir=None)
+b = generate_images(num_images, 128, save_dir=None)
 
 
 print(a.shape)
 print(b.shape)
 print(c.shape)
-dataset1 = np.zeros((2600,128,128,3))
+dataset1 = np.zeros((num_images,128,128,3))
 
 maximum0_dns = a.max()
 minimum0_dns = a.min()
@@ -104,7 +107,7 @@ minimum2_dns = c.min()
 print(maximum2_dns,minimum2_dns)
 
 
-for i in range(2600):
+for i in range(num_images):
 	temp = a[i]#u
 	temp1 = b[i]#v
 	temp2 = c[i]#w
@@ -232,10 +235,14 @@ class SRGAN():
 					
 			
 	def divergent_loss_tr(self, y_true, y_pred):
+		# print('y_pred shape:', y_pred.shape) # (?, 128, 128, 3)
 		u = y_pred[:,:,:,0]
 		v = y_pred[:,:,:,1]
 		w = y_pred[:,:,:,2]
-		
+		# print('u shape:', u.shape) # (?, 128, 128)
+		# print('v shape:', v.shape) # (?, 128, 128)
+		# print('w shape:', w.shape)	# (?, 128, 128)
+		# print(w)
 
 		img_size = 128	
 		num_img = 65
@@ -253,6 +260,27 @@ class SRGAN():
 		w2 = tf.concat([tf.zeros([1,img_size,img_size]),w[:-2,:,:],tf.zeros([1,img_size,img_size])],axis=0)
 		dw = (w1-w2)
 
+		# du_arr = du.numpy() # AttributeError: 'Tensor' object has no attribute 'numpy'
+
+		# sess=tf.compat.v1.Session()
+		# with sess.as_default():
+		# 	du_arr = du.eval()
+		# print(tf.get_static_value(du)) # --> None
+		# print('Hello\n\n')
+		# saving the divergence images
+		# np.save('results/du.npy', du_arr)
+		# np.save('results/dv.npy', dv.numpy())
+		# np.save('results/dw.npy', dw.numpy())
+
+		# calculate divergence using numpy
+		# u_arr = u.eval(session=tf.Session())
+		# du_arr_numpy = np.gradient(u_arr)
+		# dv_numpy = np.gradient(v.numpy())
+		# dw_numpy = np.gradient(w.numpy())
+		# np.save('results/du_numpy.npy', du_arr_numpy)
+		# np.save('results/dv_numpy.npy', dv_numpy)
+		# np.save('results/dw_numpy.npy', dw_numpy)
+	
 		s = du+dv+dw/2
 		s = tf.reshape(s,[-1])
 

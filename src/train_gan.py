@@ -29,6 +29,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import SRGAN_model
+import physics
 from SRGAN_dataset import CUDAPrefetcher, BaseImageDataset, PairedImageDataset
 from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
 from SRGAN_test import test
@@ -207,13 +208,16 @@ def load_dataset(
     # Load the train dataset
     degenerated_train_datasets = BaseImageDataset(
         config["TRAIN"]["DATASET"]["TRAIN_GT_IMAGES_DIR"],
-        None,
+        config["TRAIN"]["DATASET"]["TRAIN_LR_IMAGES_DIR"],
         config["SCALE"],
+        config["TRAIN"]["DATASET"]["IMG_TYPE"],
     )
 
     # Load the registration test dataset
     paired_test_datasets = PairedImageDataset(config["TEST"]["DATASET"]["PAIRED_TEST_GT_IMAGES_DIR"],
-                                              config["TEST"]["DATASET"]["PAIRED_TEST_LR_IMAGES_DIR"])
+                                              config["TEST"]["DATASET"]["PAIRED_TEST_LR_IMAGES_DIR"],
+                                              config["TEST"]["DATASET"]["IMG_TYPE"],
+                                              config["TEST"]["DATASET"]["HAS_SUBFOLDER"],)
 
     # generate dataset iterator
     degenerated_train_dataloader = DataLoader(degenerated_train_datasets,
@@ -273,7 +277,7 @@ def build_model(
     return g_model, ema_g_model, d_model
 
 
-def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, nn.MSELoss]:
+def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, physics.PhysicsLoss]:
     if config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["NAME"] == "MSELoss":
         pixel_criterion = nn.MSELoss()
     else:
@@ -288,6 +292,7 @@ def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.C
             config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["FEATURE_NODES"],
             config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["FEATURE_NORMALIZE_MEAN"],
             config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["FEATURE_NORMALIZE_STD"],
+            config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["IN_CHANNELS"],
         )
     else:
         raise NotImplementedError(f"Loss {config['TRAIN']['LOSSES']['CONTENT_LOSS']['NAME']} is not implemented.")
@@ -301,7 +306,7 @@ def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.C
     content_criterion = content_criterion.to(device)
     adversarial_criterion = adversarial_criterion.to(device)
 
-    physics_criterion = nn.MSELoss()
+    physics_criterion = physics.PhysicsLoss()
 
     return pixel_criterion, content_criterion, adversarial_criterion, physics_criterion
 
@@ -429,7 +434,7 @@ def train(
         # Calculate the perceptual loss of the generator, mainly including pixel loss, feature loss and confrontation loss
         with amp.autocast():
             sr = g_model(lr)
-            # print(sr.shape, gt.shape, lr.shape) # ([16, 3, 96, 96]) ([16, 3, 96, 96]) ([16, 3, 24, 24])
+            # print(sr.shape, gt.shape, lr.shape) # ([16, 1, 64, 64]) ([16, 1, 64, 64]) ([16, 1, 8, 8])
             pixel_loss = pixel_criterion(sr, gt)
             feature_loss = content_criterion(sr, gt)
             adversarial_loss = adversarial_criterion(d_model(sr), real_label)
@@ -438,11 +443,12 @@ def train(
             adversarial_loss = torch.sum(torch.mul(adversarial_weight, adversarial_loss))
 
             # adding physics loss
-            physics_loss = physics_criterion(sr, gt)
-            physics_loss = torch.sum(torch.mul(physics_weight, physics_loss))
+            # physics_loss = physics_criterion(sr, gt)
+            # physics_loss = torch.sum(torch.mul(physics_weight, physics_loss))
 
             # Compute generator total loss
-            g_loss = pixel_loss + feature_loss + adversarial_loss + physics_loss
+            g_loss = pixel_loss + feature_loss + adversarial_loss
+            # g_loss = pixel_loss + feature_loss + adversarial_loss + physics_loss
         # Backpropagation generator loss on generated samples
         scaler.scale(g_loss).backward()
         # update generator model weights
