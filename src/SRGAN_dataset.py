@@ -23,6 +23,7 @@ from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
 from SRGAN_imgproc import image_to_tensor, image_resize
+from utils import numpy_to_compatible_tensor
 
 __all__ = [
     "BaseImageDataset", "PairedImageDataset",
@@ -38,7 +39,9 @@ class BaseImageDataset(Dataset):
             gt_images_dir: str,
             lr_images_dir: str,
             upscale_factor: int = 4,
-            img_type: str = "npy"
+            img_type: str = "npy",
+            has_subfolder: bool = True,
+            in_channels: int = 3
     ) -> None:
         """
 
@@ -60,16 +63,34 @@ class BaseImageDataset(Dataset):
         if lr_images_dir == "":
             image_file_names = natsorted(os.listdir(gt_images_dir))
             self.lr_image_file_names = None
-            self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
+            if has_subfolder:
+                self.gt_image_file_names = []
+                for root, _, files in os.walk(gt_images_dir):
+                    for file in natsorted(files):
+                        self.gt_image_file_names.append(os.path.join(root, file))
+            else:
+                self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
         else:
             if os.listdir(lr_images_dir) == 0:
                 raise RuntimeError("LR image folder is empty.")
-            image_file_names = natsorted(os.listdir(lr_images_dir))
-            self.lr_image_file_names = [os.path.join(lr_images_dir, image_file_name) for image_file_name in image_file_names]
-            self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
+            if has_subfolder:
+                self.gt_image_file_names = []
+                for root, _, files in os.walk(gt_images_dir):
+                    for file in natsorted(files):
+                        self.gt_image_file_names.append(os.path.join(root, file))
+
+                self.lr_image_file_names = []
+                for root, _, files in os.walk(lr_images_dir):
+                    for file in natsorted(files):
+                        self.lr_image_file_names.append(os.path.join(root, file))
+            else:
+                image_file_names = natsorted(os.listdir(lr_images_dir))
+                self.lr_image_file_names = [os.path.join(lr_images_dir, image_file_name) for image_file_name in image_file_names]
+                self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
 
         self.upscale_factor = upscale_factor
         self.img_type = img_type
+        self.in_channels = in_channels
 
     def __getitem__(
             self,
@@ -77,10 +98,7 @@ class BaseImageDataset(Dataset):
     ) -> [Tensor, Tensor]:
         # Read a batch of ground truth images
         if self.img_type == "npy":
-            gt_image = np.load(self.gt_image_file_names[batch_index]).astype(np.float32)
-            gt_tensor = torch.from_numpy(gt_image)
-            # the input images has no channel dimension, so add it for compatibility
-            gt_tensor = gt_tensor.unsqueeze(0)
+            gt_tensor = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index], self.in_channels)
         else:
             gt_image = cv2.imread(self.gt_image_file_names[batch_index]).astype(np.float32) / 255.
             gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
@@ -89,10 +107,7 @@ class BaseImageDataset(Dataset):
         # Read a batch of low-resolution images
         if self.lr_image_file_names is not None:
             if self.img_type == "npy":
-                lr_image = np.load(self.lr_image_file_names[batch_index]).astype(np.float32)
-                lr_tensor = torch.from_numpy(lr_image)
-                # the input images has no channel dimension, so add it for compatibility
-                lr_tensor = lr_tensor.unsqueeze(0)
+                lr_tensor = numpy_to_compatible_tensor(self.lr_image_file_names[batch_index], self.in_channels)
             else:
                 lr_image = cv2.imread(self.lr_image_file_names[batch_index]).astype(np.float32) / 255.
                 lr_image = cv2.cvtColor(lr_image, cv2.COLOR_BGR2RGB)
@@ -115,7 +130,8 @@ class PairedImageDataset(Dataset):
             paired_gt_images_dir: str,
             paired_lr_images_dir: str,
             img_type: str = "npy",
-            has_subfolder: bool = False
+            has_subfolder: bool = False,
+            in_channels: int = 3
     ) -> None:
         """
 
@@ -149,24 +165,13 @@ class PairedImageDataset(Dataset):
             self.paired_lr_image_file_names = [os.path.join(paired_lr_images_dir, x) for x in image_files]
         
         self.img_type = img_type
+        self.in_channels = in_channels
 
     def __getitem__(self, batch_index: int) -> [Tensor, Tensor, str]:
         # Read a batch of image data
         if self.img_type == "npy":
-            gt_image = np.load(self.paired_gt_image_file_names[batch_index]).astype(np.float32)
-            lr_image = np.load(self.paired_lr_image_file_names[batch_index]).astype(np.float32)
-            gt_tensor = torch.from_numpy(gt_image)
-            lr_tensor = torch.from_numpy(lr_image)
-
-            # the input images has no channel dimension, so add it for compatibility
-            print('Adding channel dimension')
-            gt_tensor = gt_tensor.unsqueeze(0)
-            lr_tensor = lr_tensor.unsqueeze(0)
-
-            # adding two more channels with zeros for compatibility
-            # print('Adding two more channels with zeros for compatibility')
-            # gt_tensor = torch.cat((gt_tensor, torch.zeros_like(gt_tensor), torch.zeros_like(gt_tensor)), dim=1)
-            # lr_tensor = torch.cat((lr_tensor, torch.zeros_like(lr_tensor), torch.zeros_like(lr_tensor)), dim=1)
+            gt_tensor = numpy_to_compatible_tensor(self.paired_gt_image_file_names[batch_index], self.in_channels)
+            lr_tensor = numpy_to_compatible_tensor(self.paired_lr_image_file_names[batch_index], self.in_channels)
         else:
             gt_image = cv2.imread(self.paired_gt_image_file_names[batch_index]).astype(np.float32) / 255.
             lr_image = cv2.imread(self.paired_lr_image_file_names[batch_index]).astype(np.float32) / 255.

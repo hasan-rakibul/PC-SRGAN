@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_ImageNet-Set5
+EXP_NAME: SRGAN_x8-SRGAN_ImageNet
 # random number seed
 SEED: 0
 # Super resolution magnification factor
@@ -24,8 +24,10 @@ MODEL:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: "./data/Set5/X8/GT"
-    PAIRED_TEST_LR_IMAGES_DIR: "./data/Set5/X8/LR"
+    PAIRED_TEST_GT_IMAGES_DIR: "./data/reaction_diffusion_advection/test/mesh_63"
+    PAIRED_TEST_LR_IMAGES_DIR: "./data/reaction_diffusion_advection/test/mesh_7"
+    IMG_TYPE: "npy"
+    HAS_SUBFOLDER: True
 
   # Test hyperparameters
   HYP:
@@ -38,4 +40,4 @@ TEST:
   # Only test Y channel
   ONLY_TEST_Y_CHANNEL: True
 
-  SAVE_IMAGE_DIR: ""
+  SAVE_IMAGE_DIR: "./results/test/"

@@ -3,7 +3,7 @@
 
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_ImageNet
+EXP_NAME: SRGAN_x8-SRGAN_FEM
 # random number seed
 SEED: 0
 # super resolution magnification factor
@@ -38,15 +38,16 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: "./data/SRGAN_ImageNet_train_GT_sub"
-    TRAIN_LR_IMAGES_DIR: ""
-    GT_IMAGE_SIZE: 96
-    IMG_TYPE: "jpeg"
+    TRAIN_GT_IMAGES_DIR: ./data/reaction_diffusion_advection/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/reaction_diffusion_advection/train/mesh_7
+    GT_IMAGE_SIZE: 64
+    IMG_TYPE: npy
+    HAS_SUBFOLDER: True
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
-    # PRETRAINED_G_MODEL: "./results/pretrained_models/SRResNet_x8-SRGAN_ImageNet.pth.tar"
-    PRETRAINED_G_MODEL: "./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar"
+    # PRETRAINED_G_MODEL: ./results/pretrained_models/SRResNet_x8-SRGAN_ImageNet.pth.tar
+    PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
     RESUMED_D_MODEL: ""
@@ -82,7 +83,7 @@ TRAIN:
       NAME: ContentLoss
       NET_CFG_NAME: "vgg19"
       BATCH_NORM: False
-      NUM_CLASSES: 1000
+      NUM_CLASSES: 2
       MODEL_WEIGHTS_PATH: ""
       FEATURE_NODES: [ "features.35" ]
       FEATURE_NORMALIZE_MEAN: [ 0.485, 0.456, 0.406 ]
@@ -100,9 +101,9 @@ TRAIN:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: "./data/reaction_diffusion_advection/train/mesh_63"
-    PAIRED_TEST_LR_IMAGES_DIR: "./data/reaction_diffusion_advection/train/mesh_7"
-    IMG_TYPE: "npy"
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/reaction_diffusion_advection/test/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/reaction_diffusion_advection/test/mesh_7
+    IMG_TYPE: npy
     HAS_SUBFOLDER: True
 
   # Test hyperparameters

@@ -104,7 +104,7 @@ python src/train_gan.py
 - Test
 ```bash
 python src/SRGAN_test.py --config_path ./configs/test/SRGAN_x4-SRGAN_ImageNet-Set5.yaml
-python src/SRGAN_test.py --config_path ./configs/test/SRGAN_x8-SRGAN_ImageNet-Set5.yaml
+python src/SRGAN_test.py --config_path ./configs/test/SRGAN_x8-SRGAN_ImageNet.yaml
 ```
 
 ## Bao-UAI-PRU 
@@ -135,6 +135,7 @@ python -m pip install -r requirements-Bao22.txt
 
 # Tutorial / Learning resources 
 - [Darcy's Law - Flow in a Porous Medium](https://geo.libretexts.org/Courses/University_of_California_Davis/GEL_056%3A_Introduction_to_Geophysics/Geophysics_is_everywhere_in_geology.../02%3A_Diffusion_and_Darcy's_Law/2.05%3A_Darcy's_Law_-_Flow_in_a_Porous_Medium)
+- [https://wiki.pathmind.com/generative-adversarial-network-gan](https://wiki.pathmind.com/generative-adversarial-network-gan)
 
 ## CSIRO Cluster
 - [https://confluence.csiro.au/display/SC/Useful+information+for+new+users](https://confluence.csiro.au/display/SC/Useful+information+for+new+users)
@@ -151,6 +152,9 @@ python -m pip install -r requirements-Bao22.txt
 - [https://confluence.csiro.au/display/SC/Running+jobs+in+an+interactive+batch+shell](https://confluence.csiro.au/display/SC/Running+jobs+in+an+interactive+batch+shell)
 - [https://confluence.csiro.au/display/GEES/HPC+Cheat+Sheet](https://confluence.csiro.au/display/GEES/HPC+Cheat+Sheet)
 
+# Notes
+## Freezing layers
+In addition to controlling `param.requires_grad`, I need to enable `eval()` mode corresponding to `batchnorm layers`, if any.
 
 # Failed attempt to install FeniCS using pip
 Taken and adapted from [https://fenics.readthedocs.io/en/latest/installation.html](https://fenics.readthedocs.io/en/latest/installation.html)

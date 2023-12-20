@@ -112,6 +112,7 @@ class SRResNet(nn.Module):
             channels: int = 64,
             num_rcb: int = 16,
             upscale: int = 4,
+            freeze: bool = False,
     ) -> None:
         super(SRResNet, self).__init__()
         # Low frequency information extraction layer
@@ -153,6 +154,13 @@ class SRResNet(nn.Module):
             elif isinstance(module, nn.BatchNorm2d):
                 nn.init.constant_(module.weight, 1)
 
+        if freeze:
+            freeze_layers(self.conv1)
+            freeze_layers(self.trunk)
+            freeze_layers(self.conv2)
+            freeze_layers(self.upsampling)
+            # freeze_layers(self.conv3)
+
     def forward(self, x: Tensor) -> Tensor:
         return self._forward_impl(x)
 
@@ -176,10 +184,11 @@ class DiscriminatorForVGG(nn.Module):
             in_channels: int = 3,
             out_channels: int = 1,
             channels: int = 64,
+            freeze: bool = False,
     ) -> None:
         super(DiscriminatorForVGG, self).__init__()
         self.features = nn.Sequential(
-            # input size. (3) x 96 x 96
+            # input size. (3) x 96 x 96 ## these calculations are for 96x96 image
             nn.Conv2d(in_channels, channels, (3, 3), (1, 1), (1, 1), bias=True),
             nn.LeakyReLU(0.2, True),
             # state size. (64) x 48 x 48
@@ -210,14 +219,19 @@ class DiscriminatorForVGG(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(int(8 * channels) * 6 * 6, 1024),
+            # nn.Linear(int(8 * channels) * 6 * 6, 1024), # for 96x96 image
+            nn.Linear(int(8 * channels) * 4 * 4, 1024), # for 48x48 image        
             nn.LeakyReLU(0.2, True),
             nn.Linear(1024, out_channels),
         )
 
+        if freeze:
+            freeze_layers(self.features)        
+
     def forward(self, x: Tensor) -> Tensor:
         # Input image size must equal 96
-        assert x.size(2) == 96 and x.size(3) == 96, "Input image size must be is 96x96"
+        # assert x.size(2) == 96 and x.size(3) == 96, "Input image size must be is 96x96"
+        assert x.size(2) == 64 and x.size(3) == 64, "Input image size must be is 64x64"
 
         x = self.features(x)
         x = torch.flatten(x, 1)
@@ -287,7 +301,16 @@ class ContentLoss(nn.Module):
         # Define the feature extraction model
         model = _FeatureExtractor(net_cfg_name, batch_norm, num_classes, in_channels)
         # Load the pre-trained model
-        if model_weights_path == "":
+        if model_weights_path == "one-channel":
+            model = models.vgg19()
+            # Modify the input channel of the model
+            model.features[0] = torch.nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            # load and modify state_dict
+            state_dict = torch.utils.model_zoo.load_url('https://download.pytorch.org/models/vgg19-dcbb9e9d.pth')
+            state_dict['features.0.weight'] = state_dict['features.0.weight'].sum(dim=1, keepdim=True)
+            model.load_state_dict(state_dict)
+
+        elif model_weights_path == "":
             model = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1)
         elif model_weights_path is not None and os.path.exists(model_weights_path):
             checkpoint = torch.load(model_weights_path, map_location=lambda storage, loc: storage)
@@ -353,3 +376,15 @@ def discriminator_for_vgg(**kwargs) -> DiscriminatorForVGG:
     model = DiscriminatorForVGG(**kwargs)
 
     return model
+
+# to freeze layers, batchnorm layers needs to be in eval() mode
+# taken from https://discuss.pytorch.org/t/should-i-use-model-eval-when-i-freeze-batchnorm-layers-to-finetune/39495/5
+def _set_bn_eval(module):
+    if isinstance(module, nn.modules.batchnorm._BatchNorm):
+        module.eval()
+
+def freeze_layers(model):
+    print('Freezing model')
+    for param in model.parameters():
+        param.requires_grad = False
+    model.apply(_set_bn_eval)

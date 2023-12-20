@@ -7,6 +7,9 @@ results/
 *.pth.tar
 *.out
 src/PyTorch_gradients.ipynb
+draft.ipynb
+
+*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

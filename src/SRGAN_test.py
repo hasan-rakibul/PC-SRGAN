@@ -30,7 +30,10 @@ from SRGAN_utils import build_iqa_model, load_pretrained_state_dict, make_direct
 
 def load_dataset(config: Any, device: torch.device) -> CUDAPrefetcher:
     test_datasets = PairedImageDataset(config["TEST"]["DATASET"]["PAIRED_TEST_GT_IMAGES_DIR"],
-                                       config["TEST"]["DATASET"]["PAIRED_TEST_LR_IMAGES_DIR"])
+                                       config["TEST"]["DATASET"]["PAIRED_TEST_LR_IMAGES_DIR"],
+                                       config["TEST"]["DATASET"]["IMG_TYPE"],
+                                       config["TEST"]["DATASET"]["HAS_SUBFOLDER"]
+                                       )
     test_dataloader = DataLoader(test_datasets,
                                  batch_size=config["TEST"]["HYP"]["IMGS_PER_BATCH"],
                                  shuffle=config["TEST"]["HYP"]["SHUFFLE"],
@@ -70,8 +73,8 @@ def test(
 
     if config["TEST"]["SAVE_IMAGE_DIR"]:
         save_image = True
-        save_image_dir = os.path.join(config["SAVE_IMAGE_DIR"], config["EXP_NAME"])
-        make_directory(save_image_dir)
+        save_image_dir = os.path.join(config["TEST"]["SAVE_IMAGE_DIR"], config["EXP_NAME"])
+        # make_directory(save_image_dir)
 
     # Calculate the number of iterations per epoch
     batches = len(test_data_prefetcher)
@@ -131,9 +134,21 @@ def test(
                 raise ValueError("The image_name is None, please check the dataset.")
             if save_image:
                 image_name = os.path.basename(batch_data["image_name"][0])
+                image_name = image_name.split(".")[0] + ".png" # cannot save as npy
+
+                last_folder = os.path.join(*(batch_data["image_name"][0].split('/')[-2:-1])) # taking the last one folder name
+                save_dir = os.path.join(save_image_dir, last_folder)
+                # create dir
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir)
+
                 sr_image = tensor_to_image(sr, False, False)
                 sr_image = cv2.cvtColor(sr_image, cv2.COLOR_RGB2BGR)
-                cv2.imwrite(os.path.join(save_image_dir, image_name), sr_image)
+                # retain only R channel
+                # sr_image = sr_image[:, :, 0]
+                sr_image[:, :, 0] = sr_image[:, :, 1] = 0 # set G and B channel to 0, taken from https://stackoverflow.com/a/60288650
+                if not cv2.imwrite(os.path.join(save_dir, image_name), sr_image):
+                    raise ValueError(f"Save image `{image_name}` failed.")
 
             # Preload the next batch of data
             batch_data = test_data_prefetcher.next()

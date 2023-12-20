@@ -42,7 +42,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path",
                         type=str,
-                        default="./configs/train/SRGAN_x8-SRGAN_ImageNet.yaml",
                         help="Path to train config file.")
     args = parser.parse_args()
 
@@ -211,13 +210,16 @@ def load_dataset(
         config["TRAIN"]["DATASET"]["TRAIN_LR_IMAGES_DIR"],
         config["SCALE"],
         config["TRAIN"]["DATASET"]["IMG_TYPE"],
+        config["TRAIN"]["DATASET"]["HAS_SUBFOLDER"],
+        config["MODEL"]["G"]["IN_CHANNELS"]
     )
 
     # Load the registration test dataset
     paired_test_datasets = PairedImageDataset(config["TEST"]["DATASET"]["PAIRED_TEST_GT_IMAGES_DIR"],
                                               config["TEST"]["DATASET"]["PAIRED_TEST_LR_IMAGES_DIR"],
                                               config["TEST"]["DATASET"]["IMG_TYPE"],
-                                              config["TEST"]["DATASET"]["HAS_SUBFOLDER"],)
+                                              config["TEST"]["DATASET"]["HAS_SUBFOLDER"],
+                                              config["MODEL"]["G"]["IN_CHANNELS"])
 
     # generate dataset iterator
     degenerated_train_dataloader = DataLoader(degenerated_train_datasets,
@@ -249,10 +251,12 @@ def build_model(
     g_model = SRGAN_model.__dict__[config["MODEL"]["G"]["NAME"]](in_channels=config["MODEL"]["G"]["IN_CHANNELS"],
                                                            out_channels=config["MODEL"]["G"]["OUT_CHANNELS"],
                                                            channels=config["MODEL"]["G"]["CHANNELS"],
-                                                           num_rcb=config["MODEL"]["G"]["NUM_RCB"])
+                                                           num_rcb=config["MODEL"]["G"]["NUM_RCB"],
+                                                           freeze=config["MODEL"]["G"]["FREEZE"])
     d_model = SRGAN_model.__dict__[config["MODEL"]["D"]["NAME"]](in_channels=config["MODEL"]["D"]["IN_CHANNELS"],
                                                            out_channels=config["MODEL"]["D"]["OUT_CHANNELS"],
-                                                           channels=config["MODEL"]["D"]["CHANNELS"])
+                                                           channels=config["MODEL"]["D"]["CHANNELS"],
+                                                           freeze=config["MODEL"]["D"]["FREEZE"])
 
     g_model = g_model.to(device)
     d_model = d_model.to(device)
@@ -292,7 +296,7 @@ def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.C
             config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["FEATURE_NODES"],
             config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["FEATURE_NORMALIZE_MEAN"],
             config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["FEATURE_NORMALIZE_STD"],
-            config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["IN_CHANNELS"],
+            config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["IN_CHANNELS"]
         )
     else:
         raise NotImplementedError(f"Loss {config['TRAIN']['LOSSES']['CONTENT_LOSS']['NAME']} is not implemented.")
