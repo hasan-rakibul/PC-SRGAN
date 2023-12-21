@@ -26,7 +26,7 @@ from SRGAN_imgproc import image_to_tensor, image_resize
 from utils import numpy_to_compatible_tensor
 
 __all__ = [
-    "BaseImageDataset", "PairedImageDataset",
+    "BaseImageDataset", "PairedImageDataset", "FEMPhyDataset",
     "PrefetchGenerator", "PrefetchDataLoader", "CPUPrefetcher", "CUDAPrefetcher",
 ]
 
@@ -304,3 +304,105 @@ class CUDAPrefetcher:
 
     def __len__(self) -> int:
         return len(self.original_dataloader)
+
+class FEMPhyDataset(Dataset):
+    """Define FEM dataset loading methods (especially with loading (n-1)th frame)."""
+
+    def __init__(
+            self,
+            gt_images_dir: str,
+            lr_images_dir: str,
+            upscale_factor: int = 4,
+            img_type: str = "npy",
+            has_subfolder: bool = True,
+            in_channels: int = 3
+    ) -> None:
+        """
+
+        Args:
+            gt_images_dir (str): Ground-truth image address.
+            lr_images_dir (str, optional): Low resolution image address. Default: ``None``
+            upscale_factor (int, optional): Image up scale factor. Default: 4
+        """
+
+        super().__init__()
+        # check if the ground truth images folder is empty
+        if os.listdir(gt_images_dir) == 0:
+            raise RuntimeError("GT image folder is empty.")
+        # check if the image magnification meets the model requirements
+        if upscale_factor not in [2, 4, 8]:
+            raise RuntimeError("Upscale factor must be 2, 4, or 8.")
+
+        # Read a batch of low-resolution images
+        if lr_images_dir == "":
+            image_file_names = natsorted(os.listdir(gt_images_dir))
+            self.lr_image_file_names = None
+            if has_subfolder:
+                self.gt_image_file_names = []
+                for root, _, files in os.walk(gt_images_dir):
+                    for file in natsorted(files):
+                        self.gt_image_file_names.append(os.path.join(root, file))
+            else:
+                self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
+        else:
+            if os.listdir(lr_images_dir) == 0:
+                raise RuntimeError("LR image folder is empty.")
+            if has_subfolder:
+                self.gt_image_file_names = []
+                for root, _, files in os.walk(gt_images_dir):
+                    for file in natsorted(files):
+                        self.gt_image_file_names.append(os.path.join(root, file))
+
+                self.lr_image_file_names = []
+                for root, _, files in os.walk(lr_images_dir):
+                    for file in natsorted(files):
+                        self.lr_image_file_names.append(os.path.join(root, file))
+            else:
+                image_file_names = natsorted(os.listdir(lr_images_dir))
+                self.lr_image_file_names = [os.path.join(lr_images_dir, image_file_name) for image_file_name in image_file_names]
+                self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
+
+        self.upscale_factor = upscale_factor
+        self.img_type = img_type
+        self.in_channels = in_channels
+
+    def __getitem__(
+            self,
+            batch_index: int
+    ) -> [Tensor, Tensor, Tensor]:
+        # Read a batch of ground truth images
+        if self.img_type == "npy":
+            gt_tensor = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index], self.in_channels)
+            if batch_index == 0: #corner case
+                gt_tensor_prev = torch.zeros_like(gt_tensor)
+            else:
+                gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
+        else:
+            warnings.warn('Implemnetation not tested with non npy inputs')
+            gt_image = cv2.imread(self.gt_image_file_names[batch_index]).astype(np.float32) / 255.
+            gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
+            gt_tensor = image_to_tensor(gt_image, False, False)
+            if batch_index != 0:
+                gt_image_prev = cv2.imread(self.gt_image_file_names[batch_index-1]).astype(np.float32) / 255.
+                gt_image_prev = cv2.cvtColor(gt_image_prev, cv2.COLOR_BGR2RGB)
+                gt_tensor_prev = image_to_tensor(gt_image_prev, False, False)
+            else:
+                gt_tensor_prev = torch.zeros_like(gt_tensor)
+
+        # Read a batch of low-resolution images
+        if self.lr_image_file_names is not None:
+            if self.img_type == "npy":
+                lr_tensor = numpy_to_compatible_tensor(self.lr_image_file_names[batch_index], self.in_channels)
+            else:
+                lr_image = cv2.imread(self.lr_image_file_names[batch_index]).astype(np.float32) / 255.
+                lr_image = cv2.cvtColor(lr_image, cv2.COLOR_BGR2RGB)
+                lr_tensor = image_to_tensor(lr_image, False, False)
+        else:
+            lr_tensor = image_resize(gt_tensor, 1 / self.upscale_factor)
+
+        return {"gt": gt_tensor,
+                "lr": lr_tensor,
+                "gt_prev": gt_tensor_prev}
+
+    def __len__(self) -> int:
+        return len(self.gt_image_file_names)
