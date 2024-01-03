@@ -99,12 +99,11 @@ python src/SRGAN_split_images.py
 ```
 - Train
 ```bash
-python src/train_gan.py
+./train.sh
 ```
 - Test
 ```bash
-python src/SRGAN_test.py --config_path ./configs/test/SRGAN_x4-SRGAN_ImageNet-Set5.yaml
-python src/SRGAN_test.py --config_path ./configs/test/SRGAN_x8-SRGAN_ImageNet.yaml
+./test.sh
 ```
 
 ## Bao-UAI-PRU 

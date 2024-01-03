@@ -26,6 +26,8 @@ from torch.optim import Optimizer
 
 from SRGAN_image_quality_assessment import PSNR, SSIM
 
+import time
+
 __all__ = [
     "build_iqa_model",
     "load_state_dict", "load_pretrained_state_dict", "load_resume_state_dict",

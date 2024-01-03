@@ -4,6 +4,7 @@ from fenics import *
 from dolfin import *
 import numpy as np
 import time
+import pandas as pd
 
 def update_initial_v(u_0, v_n, bcs_0, s, eps, K, beta_vec, f_3):
     F_0 = ( v_n*s*dx + dot(beta_vec,grad(u_0))*s*dx
@@ -158,6 +159,9 @@ def generate_data(eps, K, r, theta, elem_per_dim, save_as):
 def main():
     start_time = time.time()
 
+    # only to save index_value pairs
+    index_val = pd.DataFrame(columns=['eps', 'K', 'r', 'theta'])
+
     ###### Problem's Parameters
 
     eps_range = np.linspace(1e-1, 1, 10) # diffusion coefficient
@@ -173,6 +177,10 @@ def main():
             for i_r, r in enumerate(r_range):
                 for i_theta, theta in enumerate(theta_range):
                     save_as = 'eps' + str(i_eps) + '_K' + str(i_K) + '_r' + str(i_r) + '_theta' + str(i_theta)
+                    
+                    # storing index_value pairs
+                    index_val.loc[save_as] = [eps, K, r, theta]
+                    
                     generate_data(eps, K, r, theta, 7, save_as) # generating data for 7x7 mesh
                     generate_data(eps, K, r, theta, 63, save_as) # generating data for 63x63 mesh
 
@@ -183,7 +191,9 @@ def main():
                         f.write(f"Progress: {count}/{total}\n")
                         f.write(f"Time elapsed: {time.time() - start_time}\n")
                         f.write("--------------------------------------------------\n")
-
+    
+    # save index_value pairs
+    index_val.to_csv('data/reaction_diffusion_advection/index-val-mapping.csv')
 
 if __name__ == "__main__":
     main()

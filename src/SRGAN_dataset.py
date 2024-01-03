@@ -21,6 +21,8 @@ import torch
 from natsort import natsorted
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
+import warnings
+import pandas as pd
 
 from SRGAN_imgproc import image_to_tensor, image_resize
 from utils import numpy_to_compatible_tensor
@@ -315,7 +317,9 @@ class FEMPhyDataset(Dataset):
             upscale_factor: int = 4,
             img_type: str = "npy",
             has_subfolder: bool = True,
-            in_channels: int = 3
+            in_channels: int = 3,
+            index_val_file: str = "data/reaction_diffusion_advection/index-val-mapping.csv",
+            num_steps_FEM: int = 100
     ) -> None:
         """
 
@@ -323,6 +327,7 @@ class FEMPhyDataset(Dataset):
             gt_images_dir (str): Ground-truth image address.
             lr_images_dir (str, optional): Low resolution image address. Default: ``None``
             upscale_factor (int, optional): Image up scale factor. Default: 4
+            num_steps_FEM (int, optional): Number of steps generated for each set of parameters in FEM. Default: 100
         """
 
         super().__init__()
@@ -365,15 +370,26 @@ class FEMPhyDataset(Dataset):
         self.upscale_factor = upscale_factor
         self.img_type = img_type
         self.in_channels = in_channels
+        self.index_val = pd.read_csv(index_val_file, index_col=0)
+        self.num_steps_FEM = num_steps_FEM
 
     def __getitem__(
             self,
             batch_index: int
     ) -> [Tensor, Tensor, Tensor]:
+
+        # Read parameters
+        param_name = self.gt_image_file_names[batch_index].split('/')[-2:-1][0] # get the name of the folder (parameter name)
+        eps = self.index_val.loc[param_name, 'eps']
+        K = self.index_val.loc[param_name, 'K']
+        r = self.index_val.loc[param_name, 'r']
+        theta = self.index_val.loc[param_name, 'theta']
+
         # Read a batch of ground truth images
         if self.img_type == "npy":
             gt_tensor = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index], self.in_channels)
-            if batch_index == 0: #corner case
+            # corner case. For index 0, 100, 200, etc., we don't have (n-1)th frame because these are the first frame for solutions w.r.t. each set of parameters
+            if batch_index % self.num_steps_FEM == 0:
                 gt_tensor_prev = torch.zeros_like(gt_tensor)
             else:
                 gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
@@ -382,7 +398,7 @@ class FEMPhyDataset(Dataset):
             gt_image = cv2.imread(self.gt_image_file_names[batch_index]).astype(np.float32) / 255.
             gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
             gt_tensor = image_to_tensor(gt_image, False, False)
-            if batch_index != 0:
+            if batch_index % self.num_steps_FEM != 0:
                 gt_image_prev = cv2.imread(self.gt_image_file_names[batch_index-1]).astype(np.float32) / 255.
                 gt_image_prev = cv2.cvtColor(gt_image_prev, cv2.COLOR_BGR2RGB)
                 gt_tensor_prev = image_to_tensor(gt_image_prev, False, False)
@@ -400,9 +416,15 @@ class FEMPhyDataset(Dataset):
         else:
             lr_tensor = image_resize(gt_tensor, 1 / self.upscale_factor)
 
-        return {"gt": gt_tensor,
-                "lr": lr_tensor,
-                "gt_prev": gt_tensor_prev}
+        return {
+            "gt": gt_tensor,
+            "lr": lr_tensor,
+            "gt_prev": gt_tensor_prev,
+            "eps": eps,
+            "K": K,
+            "r": r,
+            "theta": theta
+        }
 
     def __len__(self) -> int:
         return len(self.gt_image_file_names)

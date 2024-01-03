@@ -29,8 +29,8 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import SRGAN_model
-import physics
-from SRGAN_dataset import CUDAPrefetcher, BaseImageDataset, PairedImageDataset
+from physics import PhysicsLossInnerImage, PhysicsLossImageBoundary
+from SRGAN_dataset import CUDAPrefetcher, BaseImageDataset, PairedImageDataset, FEMPhyDataset
 from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
 from SRGAN_test import test
 from SRGAN_utils import build_iqa_model, load_resume_state_dict, load_pretrained_state_dict, make_directory, save_checkpoint, \
@@ -38,6 +38,7 @@ from SRGAN_utils import build_iqa_model, load_resume_state_dict, load_pretrained
 
 
 def main():
+    start_time = time.time()
     # Read parameters from configuration file
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path",
@@ -73,7 +74,7 @@ def main():
     # Define the basic functions needed to start training
     train_data_prefetcher, paired_test_data_prefetcher = load_dataset(config, device)
     g_model, ema_g_model, d_model = build_model(config, device)
-    pixel_criterion, content_criterion, adversarial_criterion, physics_criterion = define_loss(config, device)
+    pixel_criterion, content_criterion, adversarial_criterion, physics_inner_criterion, physics_boundary_criterion = define_loss(config, device)
     g_optimizer, d_optimizer = define_optimizer(g_model, d_model, config)
     g_scheduler, d_scheduler = define_scheduler(g_optimizer, d_optimizer, config)
 
@@ -143,7 +144,8 @@ def main():
               pixel_criterion,
               content_criterion,
               adversarial_criterion,
-              physics_criterion,
+              physics_inner_criterion,
+              physics_boundary_criterion,
               g_optimizer,
               d_optimizer,
               epoch,
@@ -162,8 +164,7 @@ def main():
                           ssim_model,
                           device,
                           config)
-        print("\n")
-
+        
         # Write the evaluation indicators of each round of Epoch to the log
         writer.add_scalar(f"Test/PSNR", psnr, epoch + 1)
         writer.add_scalar(f"Test/SSIM", ssim, epoch + 1)
@@ -199,13 +200,17 @@ def main():
                         is_best,
                         is_last)
 
+        print("\tCumulative time elapsed during current training: {:.2f}min".format((time.time() - start_time) / 60))
+        print("\n")
 
 def load_dataset(
         config: Any,
         device: torch.device,
 ) -> [CUDAPrefetcher, CUDAPrefetcher]:
     # Load the train dataset
-    degenerated_train_datasets = BaseImageDataset(
+
+    # degenerated_train_datasets = BaseImageDataset(    
+    degenerated_train_datasets = FEMPhyDataset(
         config["TRAIN"]["DATASET"]["TRAIN_GT_IMAGES_DIR"],
         config["TRAIN"]["DATASET"]["TRAIN_LR_IMAGES_DIR"],
         config["SCALE"],
@@ -281,7 +286,7 @@ def build_model(
     return g_model, ema_g_model, d_model
 
 
-def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, physics.PhysicsLoss]:
+def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, PhysicsLossInnerImage, PhysicsLossImageBoundary]:
     if config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["NAME"] == "MSELoss":
         pixel_criterion = nn.MSELoss()
     else:
@@ -310,9 +315,10 @@ def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.C
     content_criterion = content_criterion.to(device)
     adversarial_criterion = adversarial_criterion.to(device)
 
-    physics_criterion = physics.PhysicsLoss()
+    physics_inner_criterion = PhysicsLossInnerImage()
+    physics_boundary_criterion = PhysicsLossImageBoundary()
 
-    return pixel_criterion, content_criterion, adversarial_criterion, physics_criterion
+    return pixel_criterion, content_criterion, adversarial_criterion, physics_inner_criterion, physics_boundary_criterion
 
 
 def define_optimizer(g_model: nn.Module, d_model: nn.Module, config: Any) -> [optim.Adam, optim.Adam]:
@@ -357,7 +363,8 @@ def train(
         pixel_criterion: nn.L1Loss,
         content_criterion: SRGAN_model.ContentLoss,
         adversarial_criterion: nn.BCEWithLogitsLoss,
-        physics_criterion,
+        physics_inner_criterion: PhysicsLossInnerImage,
+        physics_boundary_criterion: PhysicsLossImageBoundary,
         g_optimizer: optim.Adam,
         d_optimizer: optim.Adam,
         epoch: int,
@@ -386,9 +393,23 @@ def train(
     pixel_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["WEIGHT"]).to(device)
     feature_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["WEIGHT"]).to(device)
     adversarial_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["ADVERSARIAL_LOSS"]["WEIGHT"]).to(device)
-    physics_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["PHYSICS_LOSS"]["WEIGHT"]).to(device)
+    physics_inner_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["PHYSICS_LOSS"]["INNER_WEIGHT"]).to(device)
+    physics_boundary_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["PHYSICS_LOSS"]["BOUNDARY_WEIGHT"]).to(device)
 
-    # Initialize data batches
+    # Initialise variables to accumulate values over the epoch
+    total_d_loss = 0.0
+    total_d_loss_gt = 0.0
+    total_d_loss_sr = 0.0
+    total_g_loss = 0.0
+    total_pixel_loss = 0.0
+    total_feature_loss = 0.0
+    total_adversarial_loss = 0.0
+    total_physics_inner_loss = 0.0
+    total_physics_boundary_loss = 0.0
+    total_gt_probability = 0.0
+    total_sr_probability = 0.0
+
+    # Initialise data batches
     batch_index = 0
     # Set the dataset iterator pointer to 0
     train_data_prefetcher.reset()
@@ -415,14 +436,22 @@ def train(
         gt = batch_data["gt"].to(device, non_blocking=True)
         lr = batch_data["lr"].to(device, non_blocking=True)
 
+        # getting data for physics loss
+        gt_prev = batch_data["gt_prev"].to(device, non_blocking=True)
+        eps = batch_data["eps"].to(device, non_blocking=True)
+        K = batch_data["K"].to(device, non_blocking=True)
+        r = batch_data["r"].to(device, non_blocking=True)
+        theta = batch_data["theta"].to(device, non_blocking=True)
+
         # image data augmentation
-        gt, lr = random_crop_torch(gt,
-                                   lr,
-                                   config["TRAIN"]["DATASET"]["GT_IMAGE_SIZE"],
-                                   config["SCALE"])
-        gt, lr = random_rotate_torch(gt, lr, config["SCALE"], [0, 90, 180, 270])
-        gt, lr = random_vertically_flip_torch(gt, lr)
-        gt, lr = random_horizontally_flip_torch(gt, lr)
+        # commented out because it may interfere with physics loss
+        # gt, lr = random_crop_torch(gt,
+        #                            lr,
+        #                            config["TRAIN"]["DATASET"]["GT_IMAGE_SIZE"],
+        #                            config["SCALE"])
+        # gt, lr = random_rotate_torch(gt, lr, config["SCALE"], [0, 90, 180, 270])
+        # gt, lr = random_vertically_flip_torch(gt, lr)
+        # gt, lr = random_horizontally_flip_torch(gt, lr)
 
         # Record the time to load a batch of data
         data_time.update(time.time() - end)
@@ -447,12 +476,17 @@ def train(
             adversarial_loss = torch.sum(torch.mul(adversarial_weight, adversarial_loss))
 
             # adding physics loss
-            # physics_loss = physics_criterion(sr, gt)
-            # physics_loss = torch.sum(torch.mul(physics_weight, physics_loss))
+            physics_inner_loss = physics_inner_criterion(
+                sr, gt, gt_prev,
+                eps, K, r, theta
+            )
+            physics_inner_loss = torch.sum(torch.mul(physics_inner_weight, physics_inner_loss))
+
+            physics_boundary_loss = physics_boundary_criterion(sr)
+            physics_boundary_loss = torch.sum(torch.mul(physics_boundary_weight, physics_boundary_loss))
 
             # Compute generator total loss
-            g_loss = pixel_loss + feature_loss + adversarial_loss
-            # g_loss = pixel_loss + feature_loss + adversarial_loss + physics_loss
+            g_loss = pixel_loss + feature_loss + adversarial_loss + physics_inner_loss + physics_boundary_loss
         # Backpropagation generator loss on generated samples
         scaler.scale(g_loss).backward()
         # update generator model weights
@@ -502,8 +536,21 @@ def train(
         batch_time.update(time.time() - end)
         end = time.time()
 
+        # Accumulate the values of each batch of data
+        total_d_loss += d_loss.item()
+        total_d_loss_gt += d_loss_gt.item()
+        total_d_loss_sr += d_loss_sr.item()
+        total_g_loss += g_loss.item()
+        total_pixel_loss += pixel_loss.item()
+        total_feature_loss += feature_loss.item()
+        total_adversarial_loss += adversarial_loss.item()
+        total_physics_inner_loss += physics_inner_loss.item()
+        total_physics_boundary_loss += physics_boundary_loss.item()
+        total_gt_probability += torch.sigmoid_(torch.mean(gt_output.detach())).item()
+        total_sr_probability += torch.sigmoid_(torch.mean(sr_output.detach())).item()
+
         # Output training log information once
-        if batch_index % config["TRAIN"]["PRINT_FREQ"] == 0:
+        if config["TRAIN"]["PRINT_PER_BATCH"] and (batch_index % config["TRAIN"]["PRINT_BATCH_FREQ"] == 0):
             # write training log
             iters = batch_index + epoch * batches
             writer.add_scalar("Train/D_Loss", d_loss.item(), iters)
@@ -513,8 +560,13 @@ def train(
             writer.add_scalar("Train/Pixel_Loss", pixel_loss.item(), iters)
             writer.add_scalar("Train/Feature_Loss", feature_loss.item(), iters)
             writer.add_scalar("Train/Adversarial_Loss", adversarial_loss.item(), iters)
+            writer.add_scalar("Train/Physics_Inner_Loss", physics_inner_loss.item(), iters)
+            writer.add_scalar("Train/Physics_Boundary_Loss", physics_boundary_loss.item(), iters)
             writer.add_scalar("Train/D(GT)_Probability", torch.sigmoid_(torch.mean(gt_output.detach())).item(), iters)
             writer.add_scalar("Train/D(SR)_Probability", torch.sigmoid_(torch.mean(sr_output.detach())).item(), iters)
+            
+        if batch_index % config["TRAIN"]["PRINT_BATCH_FREQ"] == 0:
+            # Output training log information per print_batch_freq batches
             progress.display(batch_index)
 
         # Preload the next batch of data
@@ -522,7 +574,33 @@ def train(
 
         # After training a batch of data, add 1 to the number of data batches to ensure that the terminal prints data normally
         batch_index += 1
+    
+    # Calculate the average values of the current epoch
+    avg_d_loss = total_d_loss / batches
+    avg_d_loss_gt = total_d_loss_gt / batches
+    avg_d_loss_sr = total_d_loss_sr / batches
+    avg_g_loss = total_g_loss / batches
+    avg_pixel_loss = total_pixel_loss / batches
+    avg_feature_loss = total_feature_loss / batches
+    avg_adversarial_loss = total_adversarial_loss / batches
+    avg_physics_inner_loss = total_physics_inner_loss / batches
+    avg_physics_boundary_loss = total_physics_boundary_loss / batches
+    avg_gt_probability = total_gt_probability / batches
+    avg_sr_probability = total_sr_probability / batches
 
+    if not config["TRAIN"]["PRINT_PER_BATCH"]:
+        # write training log per epoch
+        writer.add_scalar("Train/D_Loss", avg_d_loss, epoch + 1)
+        writer.add_scalar("Train/D(GT)_Loss", avg_d_loss_gt, epoch + 1)
+        writer.add_scalar("Train/D(SR)_Loss", avg_d_loss_sr, epoch + 1)
+        writer.add_scalar("Train/G_Loss", avg_g_loss, epoch + 1)
+        writer.add_scalar("Train/Pixel_Loss", avg_pixel_loss, epoch + 1)
+        writer.add_scalar("Train/Feature_Loss", avg_feature_loss, epoch + 1)
+        writer.add_scalar("Train/Adversarial_Loss", avg_adversarial_loss, epoch + 1)
+        writer.add_scalar("Train/Physics_Inner_Loss", avg_physics_inner_loss, epoch + 1)
+        writer.add_scalar("Train/Physics_Boundary_Loss", avg_physics_boundary_loss, epoch + 1)
+        writer.add_scalar("Train/D(GT)_Probability", avg_gt_probability, epoch + 1)
+        writer.add_scalar("Train/D(SR)_Probability", avg_sr_probability, epoch + 1)
 
 if __name__ == "__main__":
     main()

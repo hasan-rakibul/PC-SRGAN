@@ -3,7 +3,7 @@
 
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel-freeze
+EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_freeze_physics-loss_small-weights
 # random number seed
 SEED: 0
 # super resolution magnification factor
@@ -97,9 +97,11 @@ TRAIN:
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
       NAME: MSELoss
-      WEIGHT: [ 100.0 ]
+      INNER_WEIGHT: [ 0.001 ]
+      BOUNDARY_WEIGHT: [ 0.1 ]
 
-  PRINT_FREQ: 100
+  PRINT_PER_BATCH: False
+  PRINT_BATCH_FREQ: 100
 
 TEST:
   DATASET:

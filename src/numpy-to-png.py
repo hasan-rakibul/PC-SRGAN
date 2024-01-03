@@ -6,9 +6,9 @@ from SRGAN_imgproc import tensor_to_image
 
 def main():
     has_subfolder = True
-    source = './data/reaction_diffusion_advection/test/mesh_7'
+    source = './data/reaction_diffusion_advection/train/mesh_7'
     # source = './data/reaction_diffusion_advection/test/mesh_63'
-    save_image_dir = './data/reaction_diffusion_advection/test_img'
+    save_image_dir = './data/reaction_diffusion_advection/train_img'
     
     if has_subfolder:
         for root, _, files in os.walk(source):
