@@ -1,7 +1,6 @@
 import torch
 from torch import nn, Tensor
 from torch.nn import functional as F_torch
-import numpy as np
     
 class PhysicsLossInnerImage(nn.Module):
     """Constructs a physics-based loss function for the inner side of the image (w/o boundary pixels).
@@ -82,7 +81,7 @@ class PhysicsLossInnerImage(nn.Module):
         return img_lap
     
     def _remove_boundary(self, tensor: Tensor) -> Tensor:
-        # (batch, 1, 64, 64) -> (batch, 1, 62, 62)
+        # (batch, channel, 64, 64) -> (batch, channel, 62, 62)
         return tensor[:, :, 1:-1, 1:-1]
     
     def sanity_check(self, img):
@@ -96,8 +95,8 @@ class PhysicsLossInnerImage(nn.Module):
 
         img_lap = self._calculate_image_laplacian(img)
         img_lap = self._remove_boundary(img_lap)
-        # assert left.shape == img_lap.shape
         print(img_lap, img_lap.shape)
+        assert left.shape == img_lap.shape
 
         print('Differences:')
         print(left - img_lap)
@@ -126,10 +125,11 @@ class PhysicsLossImageBoundary(nn.Module):
         # input normalization
         # sr_tensor = self.normalize(sr_tensor)
 
-        left = sr_tensor[:, :, 0]
-        right = sr_tensor[:, :, -1]
-        top = sr_tensor[:, 0, 1:-1] # due to overalp, remove 1 pixel from each side
-        bottom = sr_tensor[:, -1, 1:-1] # due to overalp, remove 1 pixel from each side
+        # sr_tensor shape: (batch, channel, 64, 64)
+        left = sr_tensor[:, :, :, 0]
+        right = sr_tensor[:, :, :, -1]
+        top = sr_tensor[:, :, 0, 1:-1] # due to overalp, remove 1 pixel from each side
+        bottom = sr_tensor[:, :, -1, 1:-1] # due to overalp, remove 1 pixel from each side
 
         losses_left = F_torch.mse_loss(left, self.fem_left * torch.ones_like(left).to(self.device))
         losses_right = F_torch.mse_loss(right, self.fem_right * torch.ones_like(right).to(self.device))

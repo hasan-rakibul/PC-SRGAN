@@ -3,13 +3,16 @@
 
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_freeze_physics-loss_small-weights
+EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze
 # random number seed
 SEED: 0
 # super resolution magnification factor
 SCALE: 8
 # run device model
 DEVICE_ID: 3
+
+# default: 0. Remember it starts from 0 (kinda n-1 if we compare with tensorboard graphs)
+START_EPOCH: 0
 
 # default: inductor, which may be better, but it is not supported by the P100 GPU in Bracewell
 BACKEND: eager
@@ -29,14 +32,14 @@ MODEL:
     CHANNELS: 64
     NUM_RCB: 16
     COMPILED: False
-    FREEZE: True
+    FREEZE: False
   D:
     NAME: discriminator_for_vgg
     IN_CHANNELS: 1
     OUT_CHANNELS: 1
     CHANNELS: 64
     COMPILED: False
-    FREEZE: True
+    FREEZE: False
 
 TRAIN:
   DATASET:
@@ -52,7 +55,9 @@ TRAIN:
     PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
+    # RESUMED_G_MODEL: ./results/SRGAN_x8-SRGAN_FEM_1_channel_physics-loss_small-weights/g_best.pth.tar
     RESUMED_D_MODEL: ""
+    # RESUMED_D_MODEL: ./results/SRGAN_x8-SRGAN_FEM_1_channel_physics-loss_small-weights/d_best.pth.tar
 
   # training hyperparameters
   HYP:

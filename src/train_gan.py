@@ -62,7 +62,7 @@ def main():
     scaler = amp.GradScaler()
 
     # Default to start training from scratch
-    start_epoch = 0
+    start_epoch = config["START_EPOCH"]
 
     # Initialize the image clarity evaluation index
     best_psnr = 0.0
@@ -179,7 +179,8 @@ def main():
                          "ssim": ssim,
                          "state_dict": g_model.state_dict(),
                          "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
-                         "optimizer": g_optimizer.state_dict()},
+                         "optimizer": g_optimizer.state_dict(),
+                         "scheduler": g_scheduler.state_dict()},
                         f"epoch_{epoch + 1}.pth.tar",
                         samples_dir,
                         results_dir,
@@ -191,7 +192,8 @@ def main():
                          "psnr": psnr,
                          "ssim": ssim,
                          "state_dict": d_model.state_dict(),
-                         "optimizer": d_optimizer.state_dict()},
+                         "optimizer": d_optimizer.state_dict(),
+                         "scheduler": d_scheduler.state_dict()},
                         f"epoch_{epoch + 1}.pth.tar",
                         samples_dir,
                         results_dir,
