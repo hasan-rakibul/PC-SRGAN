@@ -3,7 +3,7 @@
 
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze
+EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_no-physics_no-freeze
 # random number seed
 SEED: 0
 # super resolution magnification factor
@@ -101,9 +101,8 @@ TRAIN:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
-      NAME: MSELoss
-      INNER_WEIGHT: [ 0.001 ]
-      BOUNDARY_WEIGHT: [ 0.1 ]
+      INNER_WEIGHT: [ 0 ]
+      BOUNDARY_WEIGHT: [ 0 ]
 
   PRINT_PER_BATCH: False
   PRINT_BATCH_FREQ: 100
@@ -127,6 +126,6 @@ TEST:
   ONLY_TEST_Y_CHANNEL: False
 
   SAVE_IMAGE_DIR: ""
-  
+
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""

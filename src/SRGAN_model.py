@@ -231,7 +231,7 @@ class DiscriminatorForVGG(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         # Input image size must equal 96
         # assert x.size(2) == 96 and x.size(3) == 96, "Input image size must be is 96x96"
-        assert x.size(2) == 64 and x.size(3) == 64, "Input image size must be is 64x64"
+        assert x.size(2) == 64 and x.size(3) == 64, "Input image size must be 64x64"
 
         x = self.features(x)
         x = torch.flatten(x, 1)

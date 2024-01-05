@@ -21,6 +21,7 @@ import torch
 import yaml
 from torch import nn
 from torch.utils.data import DataLoader
+import numpy as np
 
 import SRGAN_model
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset
@@ -71,10 +72,17 @@ def test(
     save_image = False
     save_image_dir = ""
 
+    save_image_diff = False
+    save_image_diff_dir = ""
+
     if config["TEST"]["SAVE_IMAGE_DIR"]:
         save_image = True
         save_image_dir = os.path.join(config["TEST"]["SAVE_IMAGE_DIR"], config["EXP_NAME"])
         # make_directory(save_image_dir)
+
+    if config["TEST"]["SAVE_IMAGE_DIFF_DIR"]:
+        save_image_diff = True
+        save_image_diff_dir = os.path.join(config["TEST"]["SAVE_IMAGE_DIFF_DIR"], config["EXP_NAME"])
 
     # Calculate the number of iterations per epoch
     batches = len(test_data_prefetcher)
@@ -149,6 +157,24 @@ def test(
                 sr_image[:, :, 0] = sr_image[:, :, 1] = 0 # set G and B channel to 0, taken from https://stackoverflow.com/a/60288650
                 if not cv2.imwrite(os.path.join(save_dir, image_name), sr_image):
                     raise ValueError(f"Save image `{image_name}` failed.")
+                
+            # Save the difference between the processed image and the original image
+            if save_image_diff:
+                file_name = os.path.basename(batch_data["image_name"][0])
+                file_name = image_name.split(".")[0] + ".txt"
+
+                last_folder = os.path.join(*(batch_data["image_name"][0].split('/')[-2:-1])) # taking the last one folder name
+                save_dir = os.path.join(save_image_diff_dir, last_folder)
+                # create dir
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir)
+
+                img_diff = torch.abs(sr - gt)
+                img_diff = img_diff.cpu().numpy()
+
+                img_diff = img_diff.squeeze(0).squeeze(0) # remove batch and channel dimension
+
+                np.savetxt(os.path.join(save_dir, file_name), img_diff, fmt='%.2e')
 
             # Preload the next batch of data
             batch_data = test_data_prefetcher.next()
@@ -186,12 +212,17 @@ def main() -> None:
     # Load model weights
     g_model = load_pretrained_state_dict(g_model, config["MODEL"]["G"]["COMPILED"], config["MODEL_WEIGHTS_PATH"])
 
-    test(g_model,
+    psnr_avg, ssim_avg = test(g_model,
          test_data_prefetcher,
          psnr_model,
          ssim_model,
          device,
          config)
+    
+    # append the results to a csv file
+    csv_path = os.path.join(config["TEST"]["SAVE_IMAGE_DIR"], "all_test_results.csv")
+    with open(csv_path, 'a') as f:
+        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg}\n")
 
 
 if __name__ == "__main__":

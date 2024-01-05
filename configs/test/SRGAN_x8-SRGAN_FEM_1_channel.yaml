@@ -2,15 +2,15 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_freeze_physics-loss_small-weights-5-epochs
+EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze
 # random number seed
 SEED: 0
 # Super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 0
+DEVICE_ID: 1
 # Model weights path
-MODEL_WEIGHTS_PATH: "./results/SRGAN_x8-SRGAN_FEM_1_channel_freeze_physics-loss_small-weights/g_best.pth.tar"
+MODEL_WEIGHTS_PATH: "./results/SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze/g_best.pth.tar"
 
 # Model define
 MODEL:
@@ -38,6 +38,9 @@ TEST:
     PERSISTENT_WORKERS: True
 
   # Only test Y channel
-  ONLY_TEST_Y_CHANNEL: True
+  ONLY_TEST_Y_CHANNEL: False
 
   SAVE_IMAGE_DIR: "./results/test/"
+
+  # saving the difference between the ground truth and the prediction
+  SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
