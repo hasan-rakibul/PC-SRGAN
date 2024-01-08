@@ -3,16 +3,13 @@
 
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze
+EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze_warmup-epoch
 # random number seed
 SEED: 0
 # super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 3
-
-# default: 0. Remember it starts from 0 (kinda n-1 if we compare with tensorboard graphs)
-START_EPOCH: 0
+DEVICE_ID: 2
 
 # default: inductor, which may be better, but it is not supported by the P100 GPU in Bracewell
 BACKEND: eager
@@ -55,9 +52,7 @@ TRAIN:
     PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
-    # RESUMED_G_MODEL: ./results/SRGAN_x8-SRGAN_FEM_1_channel_physics-loss_small-weights/g_best.pth.tar
     RESUMED_D_MODEL: ""
-    # RESUMED_D_MODEL: ./results/SRGAN_x8-SRGAN_FEM_1_channel_physics-loss_small-weights/d_best.pth.tar
 
   # training hyperparameters
   HYP:
@@ -102,7 +97,7 @@ TRAIN:
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
       NAME: MSELoss
-      INNER_WEIGHT: [ 0.001 ]
+      INNER_WEIGHT: [ 0.0001 ]
       BOUNDARY_WEIGHT: [ 0.1 ]
 
   PRINT_PER_BATCH: False

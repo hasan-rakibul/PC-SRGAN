@@ -61,8 +61,8 @@ def main():
     # Initialize the mixed precision method
     scaler = amp.GradScaler()
 
-    # Default to start training from scratch
-    start_epoch = config["START_EPOCH"]
+    # Default to start training from scratch; during resume, start_epoch will be loaded from saved model
+    start_epoch = 0
 
     # Initialize the image clarity evaluation index
     best_psnr = 0.0
@@ -181,7 +181,7 @@ def main():
                          "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
                          "optimizer": g_optimizer.state_dict(),
                          "scheduler": g_scheduler.state_dict()},
-                        f"epoch_{epoch + 1}.pth.tar",
+                        f"g_epoch_{epoch + 1}.pth.tar",
                         samples_dir,
                         results_dir,
                         "g_best.pth.tar",
@@ -194,7 +194,7 @@ def main():
                          "state_dict": d_model.state_dict(),
                          "optimizer": d_optimizer.state_dict(),
                          "scheduler": d_scheduler.state_dict()},
-                        f"epoch_{epoch + 1}.pth.tar",
+                        f"d_epoch_{epoch + 1}.pth.tar",
                         samples_dir,
                         results_dir,
                         "d_best.pth.tar",
@@ -488,7 +488,11 @@ def train(
             physics_boundary_loss = torch.sum(torch.mul(physics_boundary_weight, physics_boundary_loss))
 
             # Compute generator total loss
-            g_loss = pixel_loss + feature_loss + adversarial_loss + physics_inner_loss + physics_boundary_loss
+            # upto epoch 4, we don't add physics loss
+            if epoch < 4:
+                g_loss = pixel_loss + feature_loss + adversarial_loss
+            else: 
+                g_loss = pixel_loss + feature_loss + adversarial_loss + physics_inner_loss + physics_boundary_loss
         # Backpropagation generator loss on generated samples
         scaler.scale(g_loss).backward()
         # update generator model weights

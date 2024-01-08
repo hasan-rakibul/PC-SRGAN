@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze
+EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_no-physics_no-freeze
 # random number seed
 SEED: 0
 # Super resolution magnification factor
@@ -10,7 +10,7 @@ SCALE: 8
 # run device model
 DEVICE_ID: 1
 # Model weights path
-MODEL_WEIGHTS_PATH: "./results/SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze/g_best.pth.tar"
+MODEL_WEIGHTS_PATH: "./results/SRGAN_x8-SRGAN_FEM_1_channel_no-physics_no-freeze_epoch25/g_best.pth.tar"
 
 # Model define
 MODEL:
