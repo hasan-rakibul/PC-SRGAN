@@ -135,6 +135,7 @@ python -m pip install -r requirements-Bao22.txt
 # Tutorial / Learning resources 
 - [Darcy's Law - Flow in a Porous Medium](https://geo.libretexts.org/Courses/University_of_California_Davis/GEL_056%3A_Introduction_to_Geophysics/Geophysics_is_everywhere_in_geology.../02%3A_Diffusion_and_Darcy's_Law/2.05%3A_Darcy's_Law_-_Flow_in_a_Porous_Medium)
 - [https://wiki.pathmind.com/generative-adversarial-network-gan](https://wiki.pathmind.com/generative-adversarial-network-gan)
+- [PSNR and SSIM](https://towardsdatascience.com/super-resolution-a-basic-study-e01af1449e13)
 
 ## CSIRO Cluster
 - [https://confluence.csiro.au/display/SC/Useful+information+for+new+users](https://confluence.csiro.au/display/SC/Useful+information+for+new+users)

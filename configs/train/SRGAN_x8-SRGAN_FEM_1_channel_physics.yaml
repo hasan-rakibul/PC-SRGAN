@@ -3,7 +3,7 @@
 
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze_warmup-epoch
+EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze_no-warmup
 # random number seed
 SEED: 0
 # super resolution magnification factor

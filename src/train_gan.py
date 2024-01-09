@@ -30,7 +30,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import SRGAN_model
 from physics import PhysicsLossInnerImage, PhysicsLossImageBoundary
-from SRGAN_dataset import CUDAPrefetcher, BaseImageDataset, PairedImageDataset, FEMPhyDataset
+from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset, FEMPhyDataset
 from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
 from SRGAN_test import test
 from SRGAN_utils import build_iqa_model, load_resume_state_dict, load_pretrained_state_dict, make_directory, save_checkpoint, \
@@ -53,10 +53,14 @@ def main():
     random.seed(config["SEED"])
     np.random.seed(config["SEED"])
     torch.manual_seed(config["SEED"])
-    torch.cuda.manual_seed_all(config["SEED"])
+    # torch.cuda.manual_seed_all(config["SEED"]) # if use multi-GPU simultaneously, this line should be uncommented
 
     # Because the size of the input image is fixed, the fixed CUDNN convolution method can greatly increase the running speed
-    cudnn.benchmark = True
+    # cudnn.benchmark = True
+
+    # making it deterministic
+    cudnn.benchmark = False
+    torch.use_deterministic_algorithms(True)
 
     # Initialize the mixed precision method
     scaler = amp.GradScaler()
@@ -488,11 +492,11 @@ def train(
             physics_boundary_loss = torch.sum(torch.mul(physics_boundary_weight, physics_boundary_loss))
 
             # Compute generator total loss
-            # upto epoch 4, we don't add physics loss
-            if epoch < 4:
-                g_loss = pixel_loss + feature_loss + adversarial_loss
-            else: 
-                g_loss = pixel_loss + feature_loss + adversarial_loss + physics_inner_loss + physics_boundary_loss
+            # upto epoch 3, we don't add physics loss
+            # if epoch < 4:
+            #     g_loss = pixel_loss + feature_loss + adversarial_loss
+            # else: 
+            g_loss = pixel_loss + feature_loss + adversarial_loss + physics_inner_loss + physics_boundary_loss
         # Backpropagation generator loss on generated samples
         scaler.scale(g_loss).backward()
         # update generator model weights

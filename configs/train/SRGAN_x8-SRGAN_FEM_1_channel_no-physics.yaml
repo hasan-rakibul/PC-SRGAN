@@ -51,10 +51,8 @@ TRAIN:
     # PRETRAINED_G_MODEL: ./results/pretrained_models/SRResNet_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
-    # RESUMED_G_MODEL: ""
-    RESUMED_G_MODEL: ./results/SRGAN_x8-SRGAN_FEM_1_channel_no-physics_no-freeze/g_best.pth.tar
-    # RESUMED_D_MODEL: ""
-    RESUMED_D_MODEL: ./results/SRGAN_x8-SRGAN_FEM_1_channel_no-physics_no-freeze/d_best.pth.tar
+    RESUMED_G_MODEL: ""
+    RESUMED_D_MODEL: ""
 
   # training hyperparameters
   HYP:
