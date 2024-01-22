@@ -5,21 +5,24 @@ import numpy as np
 from natsort import natsorted
 
 def main():
-    data_dir = 'data/reaction_diffusion_advection/'
+    '''Convert vtk files to numpy image arrays and save them'''
+
+    data_dir = 'data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/'
+    vtk_dir = os.path.join(data_dir, 'raw_vtk/')
     if not os.path.exists(data_dir):
         print('Directory does not exist')
         return
 
     save_in_subfolder = True
 
-    mesh_dir = os.listdir(data_dir)
+    mesh_dir = os.listdir(vtk_dir)
     for mesh in mesh_dir:
-        folders = os.listdir(os.path.join(data_dir, mesh))
+        folders = os.listdir(os.path.join(vtk_dir, mesh))
         for index, folder in enumerate(folders):
-            all_files = natsorted(os.listdir(os.path.join(data_dir, mesh, folder)))
+            all_files = natsorted(os.listdir(os.path.join(vtk_dir, mesh, folder)))
             vtu_files = [file for file in all_files if file.endswith('.vtu')]
             for file in vtu_files:
-                file_with_path = os.path.join(data_dir, mesh, folder, file)
+                file_with_path = os.path.join(vtk_dir, mesh, folder, file)
                 print('Working on mesh:', mesh, '\tfolder:', folder, '\tFile:', file)
                 
                 reader = vtk.vtkXMLUnstructuredGridReader()
@@ -44,9 +47,9 @@ def main():
                     data[indices_x[i], indices_y[i]] = point_data[i]
 
                 if save_in_subfolder:
-                    save_dir = os.path.join(data_dir, 'processed/', mesh, folder)
+                    save_dir = os.path.join(data_dir, 'train/', mesh, folder)
                 else:
-                    save_dir = os.path.join(data_dir, 'processed/', mesh)
+                    save_dir = os.path.join(data_dir, 'train/', mesh)
                 
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)

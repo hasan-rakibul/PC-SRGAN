@@ -173,7 +173,9 @@ class SRResNet(nn.Module):
         x = self.upsampling(x) # low resolution to high resolution
         x = self.conv3(x)
 
-        x = torch.clamp_(x, 0.0, 1.0)
+        # x = torch.clamp_(x, 0.0, 1.0)
+        eps = 1e-2
+        x = torch.clamp(x, -1.0+eps, 1.0-eps)
 
         return x
 

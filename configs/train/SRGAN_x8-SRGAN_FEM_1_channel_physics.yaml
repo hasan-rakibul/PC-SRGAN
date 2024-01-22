@@ -3,13 +3,13 @@
 
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_physics_no-freeze_no-warmup
+EXP_NAME: Allen-Cahn_Periodic-BC_implicit_increased-weight
 # random number seed
 SEED: 0
 # super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 2
+DEVICE_ID: 1
 
 # default: inductor, which may be better, but it is not supported by the P100 GPU in Bracewell
 BACKEND: eager
@@ -40,11 +40,12 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/reaction_diffusion_advection/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/reaction_diffusion_advection/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_7
     GT_IMAGE_SIZE: 64
     IMG_TYPE: npy
     HAS_SUBFOLDER: True
+    INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/index-val-mapping.csv
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
@@ -66,7 +67,7 @@ TRAIN:
 
   OPTIM:
     NAME: Adam
-    LR: 0.0001
+    LR: 0.001
     BETAS: [ 0.9, 0.999 ]
     EPS: 0.0001
     WEIGHT_DECAY: 0.0
@@ -97,16 +98,16 @@ TRAIN:
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
       NAME: MSELoss
-      INNER_WEIGHT: [ 0.0001 ]
-      BOUNDARY_WEIGHT: [ 0.1 ]
+      INNER_WEIGHT: [ .00000001 ] # the original val is  .000000001
+      BOUNDARY_WEIGHT: [ 5 ]
 
   PRINT_PER_BATCH: False
   PRINT_BATCH_FREQ: 100
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/reaction_diffusion_advection/test/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/reaction_diffusion_advection/test/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_7
     IMG_TYPE: npy
     HAS_SUBFOLDER: True
 
@@ -121,7 +122,7 @@ TEST:
   # Only test Y channel
   ONLY_TEST_Y_CHANNEL: False
 
-  SAVE_IMAGE_DIR: ""
+  SAVE_IMAGE_DIR: ./results/validation/
   
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""

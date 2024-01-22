@@ -29,12 +29,14 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import SRGAN_model
-from physics import PhysicsLossInnerImage, PhysicsLossImageBoundary
+from physics import PhysicsLossInnerImage, PhysicsLossImageBoundary, PhysicsLossInnerImageAllenCahn
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset, FEMPhyDataset
 from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
 from SRGAN_test import test
 from SRGAN_utils import build_iqa_model, load_resume_state_dict, load_pretrained_state_dict, make_directory, save_checkpoint, \
     Summary, AverageMeter, ProgressMeter
+
+# from SRGAN_dataset import CPUPrefetcher
 
 
 def main():
@@ -74,6 +76,7 @@ def main():
 
     # Define the running device number
     device = torch.device("cuda", config["DEVICE_ID"])
+    # device = torch.device("cpu")
 
     # Define the basic functions needed to start training
     train_data_prefetcher, paired_test_data_prefetcher = load_dataset(config, device)
@@ -222,7 +225,8 @@ def load_dataset(
         config["SCALE"],
         config["TRAIN"]["DATASET"]["IMG_TYPE"],
         config["TRAIN"]["DATASET"]["HAS_SUBFOLDER"],
-        config["MODEL"]["G"]["IN_CHANNELS"]
+        config["MODEL"]["G"]["IN_CHANNELS"],
+        config["TRAIN"]["DATASET"]["INDEX_VAL_MAPPING"],
     )
 
     # Load the registration test dataset
@@ -251,6 +255,10 @@ def load_dataset(
     # Replace the data set iterator with CUDA to speed up
     train_data_prefetcher = CUDAPrefetcher(degenerated_train_dataloader, device)
     paired_test_data_prefetcher = CUDAPrefetcher(paired_test_dataloader, device)
+
+    # print('Using CPU Prefetcher')
+    # train_data_prefetcher = CPUPrefetcher(degenerated_train_dataloader)
+    # paired_test_data_prefetcher = CPUPrefetcher(paired_test_dataloader)
 
     return train_data_prefetcher, paired_test_data_prefetcher
 
@@ -292,7 +300,7 @@ def build_model(
     return g_model, ema_g_model, d_model
 
 
-def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, PhysicsLossInnerImage, PhysicsLossImageBoundary]:
+def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, PhysicsLossInnerImageAllenCahn, PhysicsLossImageBoundary]:
     if config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["NAME"] == "MSELoss":
         pixel_criterion = nn.MSELoss()
     else:
@@ -321,7 +329,8 @@ def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.C
     content_criterion = content_criterion.to(device)
     adversarial_criterion = adversarial_criterion.to(device)
 
-    physics_inner_criterion = PhysicsLossInnerImage()
+    # physics_inner_criterion = PhysicsLossInnerImage()
+    physics_inner_criterion = PhysicsLossInnerImageAllenCahn()
     physics_boundary_criterion = PhysicsLossImageBoundary()
 
     return pixel_criterion, content_criterion, adversarial_criterion, physics_inner_criterion, physics_boundary_criterion
@@ -369,7 +378,7 @@ def train(
         pixel_criterion: nn.L1Loss,
         content_criterion: SRGAN_model.ContentLoss,
         adversarial_criterion: nn.BCEWithLogitsLoss,
-        physics_inner_criterion: PhysicsLossInnerImage,
+        physics_inner_criterion: PhysicsLossInnerImageAllenCahn,
         physics_boundary_criterion: PhysicsLossImageBoundary,
         g_optimizer: optim.Adam,
         d_optimizer: optim.Adam,
@@ -436,6 +445,9 @@ def train(
         fake_label = torch.full([batch_size, 1, image_height, image_width], 0.0, dtype=torch.float, device=device)
     else:
         raise ValueError(f"The `{config['MODEL']['D']['NAME']}` is not supported.")
+    
+    # whether to add physics loss
+    physics = not(physics_inner_weight == 0 and physics_boundary_weight == 0)
 
     while batch_data is not None:
         # Load batches of data
@@ -444,6 +456,7 @@ def train(
 
         # getting data for physics loss
         gt_prev = batch_data["gt_prev"].to(device, non_blocking=True)
+        gt_two_prev = batch_data["gt_two_prev"].to(device, non_blocking=True)
         eps = batch_data["eps"].to(device, non_blocking=True)
         K = batch_data["K"].to(device, non_blocking=True)
         r = batch_data["r"].to(device, non_blocking=True)
@@ -481,22 +494,26 @@ def train(
             feature_loss = torch.sum(torch.mul(feature_weight, feature_loss))
             adversarial_loss = torch.sum(torch.mul(adversarial_weight, adversarial_loss))
 
-            # adding physics loss
-            physics_inner_loss = physics_inner_criterion(
-                sr, gt, gt_prev,
-                eps, K, r, theta
-            )
-            physics_inner_loss = torch.sum(torch.mul(physics_inner_weight, physics_inner_loss))
-
-            physics_boundary_loss = physics_boundary_criterion(sr)
-            physics_boundary_loss = torch.sum(torch.mul(physics_boundary_weight, physics_boundary_loss))
-
             # Compute generator total loss
-            # upto epoch 3, we don't add physics loss
-            # if epoch < 4:
+            # upto epoch 2, we don't add physics loss
+            # if epoch < 2:
             #     g_loss = pixel_loss + feature_loss + adversarial_loss
             # else: 
-            g_loss = pixel_loss + feature_loss + adversarial_loss + physics_inner_loss + physics_boundary_loss
+
+            if physics:
+                # adding physics loss
+                physics_inner_loss = physics_inner_criterion(
+                    sr, gt, gt_prev, gt_two_prev,
+                    eps, K, r, theta
+                )
+                physics_inner_loss = torch.sum(torch.mul(physics_inner_weight, physics_inner_loss))
+
+                physics_boundary_loss = physics_boundary_criterion(sr, gt)
+                physics_boundary_loss = torch.sum(torch.mul(physics_boundary_weight, physics_boundary_loss))
+                g_loss = pixel_loss + feature_loss + adversarial_loss + physics_inner_loss + physics_boundary_loss
+            else:
+                g_loss = pixel_loss + feature_loss + adversarial_loss
+            
         # Backpropagation generator loss on generated samples
         scaler.scale(g_loss).backward()
         # update generator model weights
@@ -554,10 +571,11 @@ def train(
         total_pixel_loss += pixel_loss.item()
         total_feature_loss += feature_loss.item()
         total_adversarial_loss += adversarial_loss.item()
-        total_physics_inner_loss += physics_inner_loss.item()
-        total_physics_boundary_loss += physics_boundary_loss.item()
         total_gt_probability += torch.sigmoid_(torch.mean(gt_output.detach())).item()
         total_sr_probability += torch.sigmoid_(torch.mean(sr_output.detach())).item()
+        if physics:
+            total_physics_inner_loss += physics_inner_loss.item()
+            total_physics_boundary_loss += physics_boundary_loss.item()
 
         # Output training log information once
         if config["TRAIN"]["PRINT_PER_BATCH"] and (batch_index % config["TRAIN"]["PRINT_BATCH_FREQ"] == 0):

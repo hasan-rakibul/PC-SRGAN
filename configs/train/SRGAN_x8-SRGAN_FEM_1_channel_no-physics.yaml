@@ -3,13 +3,13 @@
 
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_no-physics_no-freeze
+EXP_NAME: Allen-Cahn_Periodic-BC_no-physics_0to1-scaling
 # random number seed
 SEED: 0
 # super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 3
+DEVICE_ID: 2
 
 # default: inductor, which may be better, but it is not supported by the P100 GPU in Bracewell
 BACKEND: eager
@@ -40,11 +40,12 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/reaction_diffusion_advection/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/reaction_diffusion_advection/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_7
     GT_IMAGE_SIZE: 64
     IMG_TYPE: npy
     HAS_SUBFOLDER: True
+    INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/index-val-mapping.csv
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
@@ -104,8 +105,8 @@ TRAIN:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/reaction_diffusion_advection/test/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/reaction_diffusion_advection/test/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_7
     IMG_TYPE: npy
     HAS_SUBFOLDER: True
 
@@ -120,7 +121,7 @@ TEST:
   # Only test Y channel
   ONLY_TEST_Y_CHANNEL: False
 
-  SAVE_IMAGE_DIR: ""
+  SAVE_IMAGE_DIR: ./results/validation/
 
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""

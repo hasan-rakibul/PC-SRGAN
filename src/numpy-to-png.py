@@ -6,10 +6,13 @@ from SRGAN_imgproc import tensor_to_image
 
 def main():
     has_subfolder = True
-    source = './data/reaction_diffusion_advection/train/mesh_7'
+    source = './data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_7'
     # source = './data/reaction_diffusion_advection/test/mesh_63'
-    save_image_dir = './data/reaction_diffusion_advection/train_img'
+    save_image_dir = './data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation_img'
     
+    if not os.path.exists(source):
+        raise ValueError(f"Source directory `{source}` does not exist.")
+
     if has_subfolder:
         for root, _, files in os.walk(source):
             for file in files:

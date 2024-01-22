@@ -4,11 +4,11 @@ from natsort import natsorted
 import random
 
 def main():
-    src_mesh7 = './data/reaction_diffusion_advection/train/mesh_7'
-    src_mesh63 = './data/reaction_diffusion_advection/train/mesh_63'
+    src_mesh7 = './data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_7'
+    src_mesh63 = './data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_63'
 
-    dst_mesh7 = './data/reaction_diffusion_advection/test/mesh_7'
-    dst_mesh63 = './data/reaction_diffusion_advection/test/mesh_63'
+    dst_mesh7 = './data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_7'
+    dst_mesh63 = './data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_63'
 
     if os.path.exists(dst_mesh7) or os.path.exists(dst_mesh63):
         print('Test directories already exist. Exiting...')
@@ -24,8 +24,8 @@ def main():
 
     print('Number of folders: ', len(folders))
     
-    # choose 15% of the data for testing
-    test_ratio = 0.15
+    # choose % of the data for testing
+    test_ratio = 0.10
     num_test = int(len(folders) * test_ratio)
     
     # select random folders from mesh_7 and move them to test folder

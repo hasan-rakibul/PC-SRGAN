@@ -2,15 +2,15 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: SRGAN_x8-SRGAN_FEM_1_channel_no-physics_no-freeze
+EXP_NAME: Allen-Cahn_Periodic-BC_boundary-weight-0.1
 # random number seed
 SEED: 0
 # Super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 1
+DEVICE_ID: 3
 # Model weights path
-MODEL_WEIGHTS_PATH: "./results/SRGAN_x8-SRGAN_FEM_1_channel_no-physics_no-freeze_epoch25/g_best.pth.tar"
+MODEL_WEIGHTS_PATH: "./samples/Allen-Cahn_Periodic-BC_boundary-weight-0.1/g_epoch_100.pth.tar"
 
 # Model define
 MODEL:
@@ -24,8 +24,8 @@ MODEL:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: "./data/reaction_diffusion_advection/test/mesh_63"
-    PAIRED_TEST_LR_IMAGES_DIR: "./data/reaction_diffusion_advection/test/mesh_7"
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_7
     IMG_TYPE: "npy"
     HAS_SUBFOLDER: True
 
@@ -40,7 +40,7 @@ TEST:
   # Only test Y channel
   ONLY_TEST_Y_CHANNEL: False
 
-  SAVE_IMAGE_DIR: "./results/test/"
+  SAVE_IMAGE_DIR: ./results/test/
 
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ./results/test_diff/

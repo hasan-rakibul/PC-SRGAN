@@ -314,10 +314,10 @@ class FEMPhyDataset(Dataset):
             self,
             gt_images_dir: str,
             lr_images_dir: str,
-            upscale_factor: int = 4,
+            upscale_factor: int = 8,
             img_type: str = "npy",
             has_subfolder: bool = True,
-            in_channels: int = 3,
+            in_channels: int = 1,
             index_val_file: str = "data/reaction_diffusion_advection/index-val-mapping.csv",
             num_steps_FEM: int = 100
     ) -> None:
@@ -373,6 +373,11 @@ class FEMPhyDataset(Dataset):
         self.index_val = pd.read_csv(index_val_file, index_col=0)
         self.num_steps_FEM = num_steps_FEM
 
+        # Remove the first frames (u_n000000 and u_n000001) from the dataset
+        # self.gt_image_file_names = self._remove_first_frames(self.gt_image_file_names)
+        # if self.lr_image_file_names is not None:
+        #     self.lr_image_file_names = self._remove_first_frames(self.lr_image_file_names)
+
     def __getitem__(
             self,
             batch_index: int
@@ -388,13 +393,19 @@ class FEMPhyDataset(Dataset):
         # Read a batch of ground truth images
         if self.img_type == "npy":
             gt_tensor = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index], self.in_channels)
-            # corner case. For index 0, 100, 200, etc., we don't have (n-1)th frame because these are the first frame for solutions w.r.t. each set of parameters
+            # corner case. For index 0, 100, 200, etc., we don't have (n-1)th and (n-2)th frames because these are the first frame for solutions w.r.t. each set of parameters
             if batch_index % self.num_steps_FEM == 0:
                 gt_tensor_prev = torch.zeros_like(gt_tensor)
+                gt_tensor_two_prev = torch.zeros_like(gt_tensor)
+            # corner case. For index 1, 101, 201, etc., we don't have (n-2)th frame because these are the second frame for solutions w.r.t. each set of parameters
+            elif batch_index % self.num_steps_FEM == 1:
+                gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
+                gt_tensor_two_prev = torch.zeros_like(gt_tensor)
             else:
                 gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
+                gt_tensor_two_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-2], self.in_channels)
         else:
-            warnings.warn('Implemnetation not tested with non npy inputs')
+            warnings.warn('Implementation not verified for non-npy inputs and not implemented for (n-2)th frame.')
             gt_image = cv2.imread(self.gt_image_file_names[batch_index]).astype(np.float32) / 255.
             gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
             gt_tensor = image_to_tensor(gt_image, False, False)
@@ -420,6 +431,7 @@ class FEMPhyDataset(Dataset):
             "gt": gt_tensor,
             "lr": lr_tensor,
             "gt_prev": gt_tensor_prev,
+            "gt_two_prev": gt_tensor_two_prev,
             "eps": eps,
             "K": K,
             "r": r,
@@ -428,3 +440,7 @@ class FEMPhyDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self.gt_image_file_names)
+    
+    # def _remove_first_frames(self, file_names: list) -> list:
+    #     # warning: it is only implemented for npy files
+    #     return [file_name for file_name in file_names if not file_name.endswith('u_n000000.npy') and not file_name.endswith('u_n000001.npy')]
