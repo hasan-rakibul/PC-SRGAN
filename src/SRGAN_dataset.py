@@ -319,7 +319,7 @@ class FEMPhyDataset(Dataset):
             has_subfolder: bool = True,
             in_channels: int = 1,
             index_val_file: str = "data/reaction_diffusion_advection/index-val-mapping.csv",
-            num_steps_FEM: int = 100
+            start_sample: int = 49
     ) -> None:
         """
 
@@ -327,7 +327,6 @@ class FEMPhyDataset(Dataset):
             gt_images_dir (str): Ground-truth image address.
             lr_images_dir (str, optional): Low resolution image address. Default: ``None``
             upscale_factor (int, optional): Image up scale factor. Default: 4
-            num_steps_FEM (int, optional): Number of steps generated for each set of parameters in FEM. Default: 100
         """
 
         super().__init__()
@@ -371,12 +370,14 @@ class FEMPhyDataset(Dataset):
         self.img_type = img_type
         self.in_channels = in_channels
         self.index_val = pd.read_csv(index_val_file, index_col=0)
-        self.num_steps_FEM = num_steps_FEM
+        self.start_sample = start_sample
 
-        # Remove the first frames (u_n000000 and u_n000001) from the dataset
-        # self.gt_image_file_names = self._remove_first_frames(self.gt_image_file_names)
-        # if self.lr_image_file_names is not None:
-        #     self.lr_image_file_names = self._remove_first_frames(self.lr_image_file_names)
+        # Remove the first frames from the dataset
+        # discard the immediate previous frame and the frame before that. These are only required in gt_prev and gt_two_prev of the sample we start with
+        discard_samples = [f'u_n{self.start_sample-1:06d}.npy', f'u_n{self.start_sample-2:06d}.npy']
+        self.gt_image_file_names = self._remove_first_frames(self.gt_image_file_names, to_remove=discard_samples)
+        if self.lr_image_file_names is not None:
+            self.lr_image_file_names = self._remove_first_frames(self.lr_image_file_names, to_remove=discard_samples)
 
     def __getitem__(
             self,
@@ -394,27 +395,25 @@ class FEMPhyDataset(Dataset):
         if self.img_type == "npy":
             gt_tensor = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index], self.in_channels)
             # corner case. For index 0, 100, 200, etc., we don't have (n-1)th and (n-2)th frames because these are the first frame for solutions w.r.t. each set of parameters
-            if batch_index % self.num_steps_FEM == 0:
-                gt_tensor_prev = torch.zeros_like(gt_tensor)
-                gt_tensor_two_prev = torch.zeros_like(gt_tensor)
-            # corner case. For index 1, 101, 201, etc., we don't have (n-2)th frame because these are the second frame for solutions w.r.t. each set of parameters
-            elif batch_index % self.num_steps_FEM == 1:
-                gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
-                gt_tensor_two_prev = torch.zeros_like(gt_tensor)
-            else:
-                gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
-                gt_tensor_two_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-2], self.in_channels)
+            current_sample = int(self.gt_image_file_names[batch_index].split('/')[-1].split('.')[0].split('u_n')[1])
+            gt_tensor_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 1)
+            gt_tensor_two_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 2)
+            
+            # if current_sample == self.start_sample:
+            #     gt_tensor_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 1)
+            #     gt_tensor_two_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 2)
+            # # corner case. For index 1, 101, 201, etc., we don't have (n-2)th frame because these are the second frame for solutions w.r.t. each set of parameters
+            # elif current_sample == self.start_sample + 1:
+            #     gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
+            #     gt_tensor_two_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 2)              
+            # else:
+            #     gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
+            #     gt_tensor_two_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-2], self.in_channels)
         else:
-            warnings.warn('Implementation not verified for non-npy inputs and not implemented for (n-2)th frame.')
+            warnings.warn('Getting previous frames is not implemented for image inputs.')
             gt_image = cv2.imread(self.gt_image_file_names[batch_index]).astype(np.float32) / 255.
             gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
             gt_tensor = image_to_tensor(gt_image, False, False)
-            if batch_index % self.num_steps_FEM != 0:
-                gt_image_prev = cv2.imread(self.gt_image_file_names[batch_index-1]).astype(np.float32) / 255.
-                gt_image_prev = cv2.cvtColor(gt_image_prev, cv2.COLOR_BGR2RGB)
-                gt_tensor_prev = image_to_tensor(gt_image_prev, False, False)
-            else:
-                gt_tensor_prev = torch.zeros_like(gt_tensor)
 
         # Read a batch of low-resolution images
         if self.lr_image_file_names is not None:
@@ -441,6 +440,16 @@ class FEMPhyDataset(Dataset):
     def __len__(self) -> int:
         return len(self.gt_image_file_names)
     
-    # def _remove_first_frames(self, file_names: list) -> list:
-    #     # warning: it is only implemented for npy files
-    #     return [file_name for file_name in file_names if not file_name.endswith('u_n000000.npy') and not file_name.endswith('u_n000001.npy')]
+    def _remove_first_frames(self, file_names: list, to_remove: list) -> list:
+        # warning: it is only implemented for npy files
+        for remove_item in to_remove:
+            file_names = [file_name for file_name in file_names if not file_name.endswith(remove_item)]
+        return file_names
+    
+    def _get_nth_prev_sample(self, current_file: list, current_sample: int, n: int) -> Tensor:
+        # warning: it is only implemented for npy files
+        # figure out the earlier file name from current file name and sample
+        # return the tensor of the earlier file
+        prev_file = current_file.replace(f'u_n{current_sample:06d}.npy', f'u_n{current_sample-n:06d}.npy') # 6 digits in total, so zero padding is needed
+        tensor_prev = numpy_to_compatible_tensor(prev_file, self.in_channels)
+        return tensor_prev
