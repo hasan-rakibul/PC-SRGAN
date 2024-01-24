@@ -2,13 +2,13 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic-BC_boundary-weight-0.1
+EXP_NAME: test
 # random number seed
 SEED: 0
 # Super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 3
+DEVICE_ID: 0
 # Model weights path
 MODEL_WEIGHTS_PATH: "./samples/Allen-Cahn_Periodic-BC_boundary-weight-0.1/g_epoch_100.pth.tar"
 
@@ -31,7 +31,7 @@ TEST:
 
   # Test hyperparameters
   HYP:
-    IMGS_PER_BATCH: 1
+    IMGS_PER_BATCH: 1 # should be always 1 as the metrics can't handle batched data
     SHUFFLE: False
     NUM_WORKERS: 1
     PIN_MEMORY: True

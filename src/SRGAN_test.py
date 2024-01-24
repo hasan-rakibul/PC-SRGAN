@@ -26,7 +26,10 @@ import numpy as np
 import SRGAN_model
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset
 from SRGAN_imgproc import tensor_to_image
-from SRGAN_utils import build_iqa_model, load_pretrained_state_dict, make_directory, AverageMeter, ProgressMeter, Summary
+from SRGAN_utils import load_pretrained_state_dict, AverageMeter, ProgressMeter, Summary
+
+from torchmetrics.image import StructuralSimilarityIndexMeasure, PeakSignalNoiseRatio
+from torchmetrics.regression import MeanSquaredError
 
 
 def load_dataset(config: Any, device: torch.device) -> CUDAPrefetcher:
@@ -64,8 +67,9 @@ def build_model(config: Any, device: torch.device):
 def test(
         g_model: nn.Module,
         test_data_prefetcher: CUDAPrefetcher,
-        psnr_model: nn.Module,
-        ssim_model: nn.Module,
+        psnr_model,
+        ssim_model,
+        mse_model,
         device: torch.device,
         config: Any,
 ) -> [float, float]:
@@ -78,7 +82,6 @@ def test(
     if config["TEST"]["SAVE_IMAGE_DIR"]:
         save_image = True
         save_image_dir = os.path.join(config["TEST"]["SAVE_IMAGE_DIR"], config["EXP_NAME"])
-        # make_directory(save_image_dir)
 
     if config["TEST"]["SAVE_IMAGE_DIFF_DIR"]:
         save_image_diff = True
@@ -92,11 +95,12 @@ def test(
     else:
         print_freq = batches
     # The information printed by the progress bar
-    batch_time = AverageMeter("Time", ":6.3f", Summary.NONE)
+    batch_time = AverageMeter("Time", ":6.3f", Summary.SUM) # Summary.** controls what prints at the end of each test cycle
     psnres = AverageMeter("PSNR", ":4.2f", Summary.AVERAGE)
     ssimes = AverageMeter("SSIM", ":4.4f", Summary.AVERAGE)
+    mses = AverageMeter("MSE", ":4.4f", Summary.AVERAGE)
     progress = ProgressMeter(len(test_data_prefetcher),
-                             [batch_time, psnres, ssimes],
+                             [batch_time, psnres, ssimes, mses],
                              prefix=f"Test: ")
 
     # set the model as validation model
@@ -124,10 +128,17 @@ def test(
             # Calculate the image sharpness evaluation index
             psnr = psnr_model(sr, gt)
             ssim = ssim_model(sr, gt)
+            mse = mse_model(sr, gt)
 
             # record current metrics
-            psnres.update(psnr.item(), sr.size(0))
-            ssimes.update(ssim.item(), ssim.size(0))
+            # psnres.update(psnr.item(), sr.size(0))
+            # ssimes.update(ssim.item(), ssim.size(0))
+            # mses.update(mse.item(), mse.size(0))
+            
+            # the metrics' shapes are always [0], so not calculating the size. Default value of 1 is used from AverageMeter
+            psnres.update(psnr.item())
+            ssimes.update(ssim.item())
+            mses.update(mse.item())
 
             # Record the total time to verify a batch
             batch_time.update(time.time() - end)
@@ -185,7 +196,7 @@ def test(
     # Print the performance index of the model at the current Epoch
     progress.display_summary()
 
-    return psnres.avg, ssimes.avg
+    return psnres.avg, ssimes.avg, mses.avg
 
 
 def main() -> None:
@@ -203,26 +214,26 @@ def main() -> None:
     device = torch.device("cuda", config["DEVICE_ID"])
     test_data_prefetcher = load_dataset(config, device)
     g_model = build_model(config, device)
-    psnr_model, ssim_model = build_iqa_model(
-        config["SCALE"],
-        config["TEST"]["ONLY_TEST_Y_CHANNEL"],
-        device,
-    )
+
+    psnr_model = PeakSignalNoiseRatio(data_range=2.0).to(device)
+    ssim_model = StructuralSimilarityIndexMeasure(data_range=2.0).to(device)
+    mse_model = MeanSquaredError().to(device)
 
     # Load model weights
     g_model = load_pretrained_state_dict(g_model, config["MODEL"]["G"]["COMPILED"], config["MODEL_WEIGHTS_PATH"])
 
-    psnr_avg, ssim_avg = test(g_model,
+    psnr_avg, ssim_avg, mse_avg = test(g_model,
          test_data_prefetcher,
          psnr_model,
          ssim_model,
+         mse_model,
          device,
          config)
     
     # append the results to a csv file
     csv_path = os.path.join(config["TEST"]["SAVE_IMAGE_DIR"], "all_test_results.csv")
     with open(csv_path, 'a') as f:
-        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg}\n")
+        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg},{mse_avg}\n")
 
 
 if __name__ == "__main__":

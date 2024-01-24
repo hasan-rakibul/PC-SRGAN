@@ -24,29 +24,10 @@ from torch import nn
 from torch.nn import Module
 from torch.optim import Optimizer
 
-from SRGAN_image_quality_assessment import PSNR, SSIM
-
-import time
-
 __all__ = [
-    "build_iqa_model",
     "load_state_dict", "load_pretrained_state_dict", "load_resume_state_dict",
     "make_directory", "save_checkpoint", "AverageMeter", "ProgressMeter", "Summary",
 ]
-
-
-def build_iqa_model(
-        crop_border: int,
-        only_test_y_channel: bool,
-        device: torch.device,
-) -> tuple[Any, Any]:
-    psnr_model = PSNR(crop_border=crop_border, only_test_y_channel=only_test_y_channel, data_range=1.0)
-    ssim_model = SSIM(crop_border=crop_border, only_test_y_channel=only_test_y_channel, data_range=255.0)
-
-    psnr_model = psnr_model.to(device)
-    ssim_model = ssim_model.to(device)
-
-    return psnr_model, ssim_model
 
 
 def load_state_dict(

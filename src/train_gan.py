@@ -29,12 +29,15 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import SRGAN_model
-from physics import PhysicsLossInnerImage, PhysicsLossImageBoundary, PhysicsLossInnerImageAllenCahn
+from physics import PhysicsLossImageBoundary, PhysicsLossInnerImageAllenCahn
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset, FEMPhyDataset
-from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
+# from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
 from SRGAN_test import test
-from SRGAN_utils import build_iqa_model, load_resume_state_dict, load_pretrained_state_dict, make_directory, save_checkpoint, \
+from SRGAN_utils import load_resume_state_dict, load_pretrained_state_dict, make_directory, save_checkpoint, \
     Summary, AverageMeter, ProgressMeter
+
+from torchmetrics.image import StructuralSimilarityIndexMeasure, PeakSignalNoiseRatio
+from torchmetrics.regression import MeanSquaredError
 
 # from SRGAN_dataset import CPUPrefetcher
 
@@ -73,6 +76,7 @@ def main():
     # Initialize the image clarity evaluation index
     best_psnr = 0.0
     best_ssim = 0.0
+    best_mse = 0.0
 
     # Define the running device number
     device = torch.device("cuda", config["DEVICE_ID"])
@@ -128,11 +132,9 @@ def main():
         print("Resume training d model not found. Start training from scratch.")
 
     # Initialize the image clarity evaluation method
-    psnr_model, ssim_model = build_iqa_model(
-        config["SCALE"],
-        config["TEST"]["ONLY_TEST_Y_CHANNEL"],
-        device,
-    )
+    psnr_model = PeakSignalNoiseRatio(data_range=2.0).to(device)
+    ssim_model = StructuralSimilarityIndexMeasure(data_range=2.0).to(device)
+    mse_model = MeanSquaredError().to(device)    
 
     # Create the folder where the model weights are saved
     samples_dir = os.path.join("samples", config["EXP_NAME"])
@@ -165,25 +167,29 @@ def main():
         g_scheduler.step()
         d_scheduler.step()
 
-        psnr, ssim = test(g_model,
+        psnr, ssim, mse = test(g_model,
                           paired_test_data_prefetcher,
                           psnr_model,
                           ssim_model,
+                          mse_model,
                           device,
                           config)
         
         # Write the evaluation indicators of each round of Epoch to the log
         writer.add_scalar(f"Test/PSNR", psnr, epoch + 1)
         writer.add_scalar(f"Test/SSIM", ssim, epoch + 1)
+        writer.add_scalar(f"Test/MSE", mse, epoch + 1)
 
         # Automatically save model weights
         is_best = psnr > best_psnr and ssim > best_ssim
         is_last = (epoch + 1) == config["TRAIN"]["HYP"]["EPOCHS"]
         best_psnr = max(psnr, best_psnr)
         best_ssim = max(ssim, best_ssim)
+        best_mse = max(mse, best_mse)
         save_checkpoint({"epoch": epoch + 1,
                          "psnr": psnr,
                          "ssim": ssim,
+                         "mse": mse,
                          "state_dict": g_model.state_dict(),
                          "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
                          "optimizer": g_optimizer.state_dict(),
@@ -198,6 +204,7 @@ def main():
         save_checkpoint({"epoch": epoch + 1,
                          "psnr": psnr,
                          "ssim": ssim,
+                         "mse": mse,
                          "state_dict": d_model.state_dict(),
                          "optimizer": d_optimizer.state_dict(),
                          "scheduler": d_scheduler.state_dict()},
@@ -392,7 +399,7 @@ def train(
     batches = len(train_data_prefetcher)
 
     # The information printed by the progress bar
-    batch_time = AverageMeter("Time", ":6.3f", Summary.NONE)
+    batch_time = AverageMeter("Time", ":6.3f", Summary.SUM) # Summary.** controls what prints at the end of each test cycle
     data_time = AverageMeter("Data", ":6.3f", Summary.NONE)
     g_losses = AverageMeter("G Loss", ":6.6f", Summary.NONE)
     d_losses = AverageMeter("D Loss", ":6.6f", Summary.NONE)

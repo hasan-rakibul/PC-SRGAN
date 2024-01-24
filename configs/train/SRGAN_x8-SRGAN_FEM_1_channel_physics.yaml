@@ -3,7 +3,7 @@
 
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic-BC_implicit_increased-weight
+EXP_NAME: test
 # random number seed
 SEED: 0
 # super resolution magnification factor
