@@ -3,13 +3,13 @@
 
 
 # experiment name
-EXP_NAME: test
+EXP_NAME: RDA_inner_1e-8_boundary_5
 # random number seed
 SEED: 0
 # super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 1
+DEVICE_ID: 3
 
 # default: inductor, which may be better, but it is not supported by the P100 GPU in Bracewell
 BACKEND: eager
@@ -40,12 +40,12 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/RDA/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/RDA/train/mesh_7
     GT_IMAGE_SIZE: 64
     IMG_TYPE: npy
     HAS_SUBFOLDER: True
-    INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/index-val-mapping.csv
+    INDEX_VAL_MAPPING: ./data/RDA/index-val-mapping.csv
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
@@ -97,8 +97,7 @@ TRAIN:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
-      NAME: MSELoss
-      INNER_WEIGHT: [ .00000001 ] # the original val is  .000000001
+      INNER_WEIGHT: [ 0.00000001 ] # the original val is  .000000001
       BOUNDARY_WEIGHT: [ 5 ]
 
   PRINT_PER_BATCH: False
@@ -106,8 +105,8 @@ TRAIN:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/RDA/validation/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/RDA/validation/mesh_7
     IMG_TYPE: npy
     HAS_SUBFOLDER: True
 

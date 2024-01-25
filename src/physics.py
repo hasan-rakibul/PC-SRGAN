@@ -158,12 +158,17 @@ class PhysicsLossImageBoundary(nn.Module):
         # losses_top = F_torch.mse_loss(top, self.fem_top * torch.ones_like(top).to(self.device))
         # losses_bottom = F_torch.mse_loss(bottom, self.fem_bottom * torch.ones_like(bottom).to(self.device))
 
-        losses_top = F_torch.mse_loss(sr_tensor[:, :, 0, :], gt_tensor[:, :, 0, :]).to(self.device)
-        losses_bottom = F_torch.mse_loss(sr_tensor[:, :, -1, :], gt_tensor[:, :, -1, :]).to(self.device)
-        losses_left = F_torch.mse_loss(sr_tensor[:, :, 1:-1, 0], gt_tensor[:, :, 1:-1, 0]).to(self.device) # due to overalp, remove 1 pixel from top and bottom
-        losses_right = F_torch.mse_loss(sr_tensor[:, :, 1:-1, -1], gt_tensor[:, :, 1:-1, -1]).to(self.device)
+        # losses_top = F_torch.mse_loss(sr_tensor[:, :, 0, :], gt_tensor[:, :, 0, :]).to(self.device)
+        # losses_bottom = F_torch.mse_loss(sr_tensor[:, :, -1, :], gt_tensor[:, :, -1, :]).to(self.device)
+        # losses_left = F_torch.mse_loss(sr_tensor[:, :, 1:-1, 0], gt_tensor[:, :, 1:-1, 0]).to(self.device) # due to overalp, remove 1 pixel from top and bottom
+        # losses_right = F_torch.mse_loss(sr_tensor[:, :, 1:-1, -1], gt_tensor[:, :, 1:-1, -1]).to(self.device)
 
-        losses = losses_top + losses_bottom + losses_left + losses_right
+        losses_top_bottom = F_torch.mse_loss(sr_tensor[:, :, 0, :], sr_tensor[:, :, -1, :]).to(self.device)
+        losses_left_right = F_torch.mse_loss(sr_tensor[:, :, 1:-1, 0], sr_tensor[:, :, 1:-1, -1]).to(self.device) # due to overalp, remove 1 pixel from top and bottom
+
+        losses = losses_left_right + losses_top_bottom
+
+        # losses = losses_top + losses_bottom + losses_left + losses_right
 
         return losses
     
@@ -210,8 +215,13 @@ class PhysicsLossInnerImageAllenCahn(PhysicsLossInnerImage):
         gt_tensor_two_prev_wo_bd = self._remove_boundary(gt_tensor_two_prev)
 
         losses = (
+            # BDF time integrator
             3/2/ self.delta_t * (sr_tensor_wo_bd - 4/3*gt_tensor_prev_wo_bd+ 1/3*gt_tensor_two_prev_wo_bd)
             + self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor, theta)
+
+            # Crank-Nicolson Time integrator
+            # self.delta_t * (sr_tensor_wo_bd - gt_tensor_prev_wo_bd)
+            # +1/2*( self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor, theta) + self._calculate_spatial_operators(eps, K, b1, b2, gt_tensor_prev, theta))
         )
      
         # print('first part: ', (sr_tensor_wo_bd - 4/3*gt_tensor_prev_wo_bd+ 1/3*gt_tensor_two_prev_wo_bd))

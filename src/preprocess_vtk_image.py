@@ -7,7 +7,7 @@ from natsort import natsorted
 def main():
     '''Convert vtk files to numpy image arrays and save them'''
 
-    data_dir = 'data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/'
+    data_dir = 'data/RDA/'
     vtk_dir = os.path.join(data_dir, 'raw_vtk/')
     if not os.path.exists(data_dir):
         print('Directory does not exist')
@@ -17,6 +17,12 @@ def main():
 
     mesh_dir = os.listdir(vtk_dir)
     for mesh in mesh_dir:
+        
+        # RESUME feature: skipping mesh_7
+        if mesh == 'mesh_7':
+            print('\t', mesh, 'skipped\n')
+            continue
+        
         folders = os.listdir(os.path.join(vtk_dir, mesh))
         for index, folder in enumerate(folders):
             all_files = natsorted(os.listdir(os.path.join(vtk_dir, mesh, folder)))
@@ -53,7 +59,11 @@ def main():
                 
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
-                
+
+                # skipping upto u_n000046.vtu
+                if int(file[3:-4]) <= 46:
+                    print('\tSkipped')
+                    continue
                 if save_in_subfolder:
                     np.save(os.path.join(save_dir, file[:-4] + '.npy'), data)
                 else:

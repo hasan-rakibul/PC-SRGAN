@@ -1,23 +1,27 @@
 Apache 2.0 Licensed Code
 
-This product includes software developed by [Original Author].
+This product includes software developed by Dakewe Biotech Corporation.
 
 Original Author: Dakewe Biotech Corporation
 Original Repository: https://github.com/Lornatang/SRGAN-PyTorch
 Original Code License: Apache License 2.0 (see below)
 
 -------------------------------------------------------------------------
+The files having 'SRGAN_' prefix in 'src' folder refer to the original codes, which are licensed under the Apache License 2.0,. 
+Other codes are written by Md Rakibul Hasan unless otherwise stated within the file.
+The collected original codes are modified to implement physics-informed neural network in modelling fluid flow.
+Some of the major modifications include:
 
-physics-nn-fluid-dynamics
-
-This project includes modifications to the original code, which is licensed under the Apache License 2.0. Major modifications include:
-
-- Used completely different dataset (i.e., fluid dynamics data) and modified the code accordingly.
+- Adapted to use completely different dataset (i.e., fluid dynamics data) and modified the code accordingly.
+- Added support for 'npy' file input.
+- Added support for 1-channel image input.
 - Added support for older GPU (e.g., P100) as the original code was failed to run with `triton` compiler.
+- Physics-based loss functions are implemented and added in training code.
+- Code of evaluation metrics, such as PSNR and SSIM are updated and accommodated in testing code.
 
 -------------------------------------------------------------------------
 
-Copyright 2023 Md Rakibul Hasan
+Copyright 2024 Md Rakibul Hasan
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: test
+EXP_NAME: Allen-Cahn_Periodic-BC_weight-increased-bd5
 # random number seed
 SEED: 0
 # Super resolution magnification factor
@@ -10,7 +10,7 @@ SCALE: 8
 # run device model
 DEVICE_ID: 0
 # Model weights path
-MODEL_WEIGHTS_PATH: "./samples/Allen-Cahn_Periodic-BC_boundary-weight-0.1/g_epoch_100.pth.tar"
+MODEL_WEIGHTS_PATH: "./samples/Allen-Cahn_Periodic-BC_weight-increased-bd5/g_epoch_15.pth.tar"
 
 # Model define
 MODEL:

@@ -4,14 +4,23 @@ from natsort import natsorted
 import random
 
 def main():
-    src_mesh7 = './data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_7'
-    src_mesh63 = './data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_63'
+    ############################################
 
-    dst_mesh7 = './data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_7'
-    dst_mesh63 = './data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_63'
+    src_mesh7 = './data/RDA/train/mesh_7'
+    src_mesh63 = './data/RDA/train/mesh_63'
+
+    dst_mesh7 = './data/RDA/test/mesh_7'
+    dst_mesh63 = './data/RDA/test/mesh_63'
+
+    # choose x% of the data for testing/validation
+    dst_ratio = 0.10
+    # move the last half of the x% of remaining folders to the test directory
+    dst_split_ratio = 0.05
+
+    #############################################
 
     if os.path.exists(dst_mesh7) or os.path.exists(dst_mesh63):
-        print('Test directories already exist. Exiting...')
+        print('Test/validation directories already exist. Exiting...')
         return
 
     os.makedirs(dst_mesh7)
@@ -20,16 +29,17 @@ def main():
     print('\tCreated directory: ', dst_mesh63)
     
     folders = natsorted(os.listdir(src_mesh7))
-    assert len(folders) == len(natsorted(os.listdir(src_mesh63))), 'Number of folders in mesh_7 and mesh_63 are not equal'
+    num_folders = len(folders)
+    assert num_folders == len(natsorted(os.listdir(src_mesh63))), 'Number of folders in mesh_7 and mesh_63 are not equal'
+    print('Total number of folders: ', num_folders)
 
-    print('Number of folders: ', len(folders))
-    
-    # choose % of the data for testing
-    test_ratio = 0.10
-    num_test = int(len(folders) * test_ratio)
-    
+    num_dst = int(num_folders * dst_ratio)
+    num_split_folder = int(num_folders * dst_split_ratio)
+    print('Number of folders to move in destination (test/validation): ', num_dst)
+    print('Number of split folders to move in destination (test/validation): ', num_split_folder)
+        
     # select random folders from mesh_7 and move them to test folder
-    test_folders = random.sample(folders, num_test)
+    test_folders = random.sample(folders, num_dst)
     for folder in test_folders:
         src_path = os.path.join(src_mesh7, folder)
         dst_path = os.path.join(dst_mesh7, folder)
@@ -41,11 +51,7 @@ def main():
         shutil.move(src_path_63, dst_path_63)
         print('\tMoved folder (mesh_63): ', folder)
     
-    # move the last half of the 5% of remaining folders to the test directory
-    test_split_ratio = 0.05
     remaining_folders = natsorted(os.listdir(src_mesh7))
-    num_split_folder = int(len(remaining_folders) * test_split_ratio)
-    
     test_split_folder = random.sample(remaining_folders, num_split_folder)
     
     for folder in test_split_folder:

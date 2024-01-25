@@ -3,7 +3,7 @@
 
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic-BC_no-physics_0to1-scaling
+EXP_NAME: RDA_no_physics
 # random number seed
 SEED: 0
 # super resolution magnification factor
@@ -40,12 +40,12 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/RDA/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/RDA/train/mesh_7
     GT_IMAGE_SIZE: 64
     IMG_TYPE: npy
     HAS_SUBFOLDER: True
-    INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/index-val-mapping.csv
+    INDEX_VAL_MAPPING: ./data/RDA/index-val-mapping.csv
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
@@ -105,8 +105,8 @@ TRAIN:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/RDA/validation/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/RDA/validation/mesh_7
     IMG_TYPE: npy
     HAS_SUBFOLDER: True
 
