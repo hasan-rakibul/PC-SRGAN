@@ -35,6 +35,7 @@ class PhysicsLossInnerImage(nn.Module):
         gt_tensor_prev_wo_bd = self._remove_boundary(gt_tensor_prev)
         gt_tensor_two_prev_wo_bd = self._remove_boundary(gt_tensor_two_prev)
 
+        # contributed by Pouria Behnoudfar
         # losses = (
         #     (1 / self.delta_t) * (sr_tensor_wo_bd - gt_tensor_prev_wo_bd)
         #     + (1/2) * (self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor) + self._calculate_spatial_operators(eps, K, b1, b2, gt_tensor_prev))
@@ -47,14 +48,10 @@ class PhysicsLossInnerImage(nn.Module):
             3/2 * (sr_tensor_wo_bd - 4/3*gt_tensor_prev_wo_bd+ 1/3*gt_tensor_two_prev_wo_bd)
             + self.delta_t* self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor)
         )
-        # print('first part: ', (sr_tensor_wo_bd - 4/3*gt_tensor_prev_wo_bd+ 1/3*gt_tensor_two_prev_wo_bd))
-        # print('spatial op: ', self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor))
 
-        
         loss_criteria = nn.MSELoss()
         losses = loss_criteria(losses, torch.zeros_like(losses).to(self.device))
 
-        # print('loss: ', losses)
         return losses
 
     def _calculate_spatial_operators(self, eps: Tensor, K: Tensor, b1:Tensor, b2:Tensor, img: Tensor) -> Tensor:
@@ -67,6 +64,7 @@ class PhysicsLossInnerImage(nn.Module):
 
         img = self._remove_boundary(img)
 
+        # contributed by Pouria Behnoudfar
         spatial_op = (
             - eps * img_lap
             + b1 * img_dx + b2 * img_dy
@@ -134,11 +132,6 @@ class PhysicsLossImageBoundary(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        # self.fem_left = 1
-        # self.fem_right = 0
-        # self.fem_top = 0
-        # self.fem_bottom = 0
-
     def forward(self, sr_tensor: Tensor, gt_tensor: Tensor) -> Tensor:
         
         # get device
@@ -147,28 +140,19 @@ class PhysicsLossImageBoundary(nn.Module):
         # input normalization
         # sr_tensor = self.normalize(sr_tensor)
 
-        # sr_tensor shape: (batch, channel, 64, 64)
-        # left = sr_tensor[:, :, 1:-1, 0] # due to overalp, remove 1 pixel from top and bottom
-        # right = sr_tensor[:, :, :, -1]
-        # top = sr_tensor[:, :, 0, :] 
-        # bottom = sr_tensor[:, :, -1, :]
-
-        # losses_left = F_torch.mse_loss(left, self.fem_left * torch.ones_like(left).to(self.device))
-        # losses_right = F_torch.mse_loss(right, self.fem_right * torch.ones_like(right).to(self.device))
-        # losses_top = F_torch.mse_loss(top, self.fem_top * torch.ones_like(top).to(self.device))
-        # losses_bottom = F_torch.mse_loss(bottom, self.fem_bottom * torch.ones_like(bottom).to(self.device))
-
+        ## Dirichlet boundary conditions
         # losses_top = F_torch.mse_loss(sr_tensor[:, :, 0, :], gt_tensor[:, :, 0, :]).to(self.device)
         # losses_bottom = F_torch.mse_loss(sr_tensor[:, :, -1, :], gt_tensor[:, :, -1, :]).to(self.device)
         # losses_left = F_torch.mse_loss(sr_tensor[:, :, 1:-1, 0], gt_tensor[:, :, 1:-1, 0]).to(self.device) # due to overalp, remove 1 pixel from top and bottom
         # losses_right = F_torch.mse_loss(sr_tensor[:, :, 1:-1, -1], gt_tensor[:, :, 1:-1, -1]).to(self.device)
 
+        # losses = losses_top + losses_bottom + losses_left + losses_right
+
+        ## Periodic boundary conditions
         losses_top_bottom = F_torch.mse_loss(sr_tensor[:, :, 0, :], sr_tensor[:, :, -1, :]).to(self.device)
         losses_left_right = F_torch.mse_loss(sr_tensor[:, :, 1:-1, 0], sr_tensor[:, :, 1:-1, -1]).to(self.device) # due to overalp, remove 1 pixel from top and bottom
 
         losses = losses_left_right + losses_top_bottom
-
-        # losses = losses_top + losses_bottom + losses_left + losses_right
 
         return losses
     
@@ -202,18 +186,12 @@ class PhysicsLossInnerImageAllenCahn(PhysicsLossInnerImage):
 
         theta = theta.unsqueeze(1).unsqueeze(2).unsqueeze(3)
 
-        # normalisation by dividing by max(gt_tensor)
-        # divisor = 1.1*torch.max(torch.abs(gt_tensor))
-        # sr_tensor = sr_tensor / divisor
-        # gt_tensor = gt_tensor / divisor
-        # gt_tensor_prev = gt_tensor_prev / divisor
-        # gt_tensor_two_prev = gt_tensor_two_prev / divisor
-
         # remove boundary
         sr_tensor_wo_bd = self._remove_boundary(sr_tensor)
         gt_tensor_prev_wo_bd = self._remove_boundary(gt_tensor_prev)
         gt_tensor_two_prev_wo_bd = self._remove_boundary(gt_tensor_two_prev)
 
+        # contributed by Pouria Behnoudfar
         losses = (
             # BDF time integrator
             3/2/ self.delta_t * (sr_tensor_wo_bd - 4/3*gt_tensor_prev_wo_bd+ 1/3*gt_tensor_two_prev_wo_bd)
@@ -223,12 +201,8 @@ class PhysicsLossInnerImageAllenCahn(PhysicsLossInnerImage):
             # self.delta_t * (sr_tensor_wo_bd - gt_tensor_prev_wo_bd)
             # +1/2*( self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor, theta) + self._calculate_spatial_operators(eps, K, b1, b2, gt_tensor_prev, theta))
         )
-     
-        # print('first part: ', (sr_tensor_wo_bd - 4/3*gt_tensor_prev_wo_bd+ 1/3*gt_tensor_two_prev_wo_bd))
-        # print('spatial op: ', self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor))
         
-        loss_criteria = nn.MSELoss()
-        losses = loss_criteria(losses, torch.zeros_like(losses).to(self.device))
+        losses = F_torch.mse_loss(losses, torch.zeros_like(losses).to(self.device))
 
         return losses
 
@@ -238,6 +212,7 @@ class PhysicsLossInnerImageAllenCahn(PhysicsLossInnerImage):
 
         img = self._remove_boundary(img)
 
+        # contributed by Pouria Behnoudfar
         spatial_op = (
             - eps * img_lap
             # + b1 * img_dx + b2 * img_dy
@@ -258,7 +233,8 @@ class PhysicsLossInnerImageAllenCahn(PhysicsLossInnerImage):
         return spatial_op
 
     def _nonlinear(self, phi, Theta_):
-        Eps = (1/64)/(2*(2**0.5)*torch.arctanh(torch.Tensor([0.9])))
+        # contributed by Pouria Behnoudfar
+        Eps = (1/64)/(2*(2**0.5)*torch.arctanh(torch.Tensor([0.9]))) # is 64 fixed or related to any things?
         Eps = Eps.to(self.device)
         Theta_c = 1.2
        
@@ -267,7 +243,28 @@ class PhysicsLossInnerImageAllenCahn(PhysicsLossInnerImage):
         return 1/(Eps**2) * self._dFpar(phi, Theta_c, Theta_, opt)
 
     def _dFpar(self, phi, Theta_c, Theta_, opt):
-        if opt == 1:
-            
+        # contributed by Pouria Behnoudfar
+        if opt == 1:           
             dF = 0.5*Theta_*(torch.log(1+phi)-torch.log(1-phi))-Theta_c*phi
         return dF
+    
+
+class H1Error(PhysicsLossInnerImage):
+    '''Calculate H1 error between two images
+    '''
+    def __init__(self) -> None:
+        super().__init__()
+    
+    def forward(self, sr_tensor: Tensor, gt_tensor: Tensor) -> Tensor:
+        assert sr_tensor.size() == gt_tensor.size(), "Tensors must have the same size"
+
+        # get device
+        self.device = sr_tensor.device
+
+        sr_dx, sr_dy = self._calculate_image_derivative(sr_tensor)
+        gt_dx, gt_dy = self._calculate_image_derivative(gt_tensor)
+
+        h1_error = F_torch.mse_loss(sr_dx, gt_dx) + F_torch.mse_loss(sr_dy, gt_dy)
+        h1_ = F_torch.mse_loss(gt_dx, torch.zeros_like(gt_dx)) + F_torch.mse_loss(gt_dy, torch.zeros_like(gt_dy))
+
+        return h1_error/h1_

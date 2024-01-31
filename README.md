@@ -1,6 +1,39 @@
-# physics-nn-fluid-dynamics
+# Important details on running the code
+- The dataset is not included in the repository. It should be stored as follows:
+```
+data
+├── RDA
+│   ├── train
+│   │   ├── mesh_7
+│   │   │   ├── <folders per parameter set>
+│   │   │   │   ├── <npy files>
+│   │   ├── mesh_63
+│   │   │   ├── <folders per parameter set>
+│   │   │   │   ├── <npy files>
+│   ├── validation
+...
+│   ├── test
+...
+```
+- Download necessary pretrained SRGAN weight because we bootstrap the generator model from it.
+```bash
+bash src/SRGAN_download_weights.sh SRGAN_x8-SRGAN_ImageNet
+```
+- Install necessary packages mentioned in `requirements.txt`
+- Check and configure configuration files at `configs/train/*.yaml`
 
-# Setting up environment
+- Train
+```bash
+./train_physics.sh
+./train_no-physics.sh
+```
+- Test
+```bash
+./test_physics.sh
+./test_no-physics.sh
+```
+
+# Guides on setting up environment
 ## Creating python virtual environment
 Inside your preferred directory (e.g.,`/scratch2/<ident>`):
 ```bash
@@ -11,14 +44,14 @@ Activate virtual environment. Keep the activation command in your `.bashrc` file
 source /scratch2/<ident>/.env/pinn/bin/activate
 ```
 
-Or, if you don't need the environment everytime. Youn can activate in each terminal session using the same command above.
+Or, if you don't need the environment everytime. You can activate in each terminal session using the same command above.
 
 To deactivate the current environment:
 ```bash
 deactivate
 ```
 
-## FeniCS
+## FeniCS _(only required for generating the dataset)_
 pip install is so much pain; it needs to build from source because of the C++ dependencies. The failed attempt with pip at the end of this document.
 
 Better to install using conda:
@@ -52,7 +85,7 @@ Creat and activate a virtual environment (as described earlier).
 
 Install packages:
 ```bash
-python -m pip install -r requirements-SRGAN.txt
+python -m pip install -r requirements-FEM.txt
 ```
 
 ## Local machine
@@ -72,11 +105,11 @@ source ~/.venv/pinn/bin/activate
 
 Install necessary files on the virtual environment 
 ```bash
-python -m pip install -r requirements-SRGAN.txt
-python -m pip install -r requirements.txt 
+python -m pip install -r requirements.txt
+python -m pip install -r requirements_FEM.txt 
 ```
 
-# Others' code/data
+# Others' code/data _(not required for the final model)_
 ## SRGAN
 - Download model weights and datasets
 ```bash
@@ -92,18 +125,9 @@ bash src/SRGAN_download_weights.sh DiscriminatorForVGG_x8-SRGAN_ImageNet
 bash src/SRGAN_download_datasets.sh SRGAN_ImageNet
 bash src/SRGAN_download_datasets.sh Set5
 ```
-- Check configuration at `configs/train/*.yaml`
 - Split images
 ```bash
 python src/SRGAN_split_images.py
-```
-- Train
-```bash
-./train.sh
-```
-- Test
-```bash
-./test.sh
 ```
 
 ## Bao-UAI-PRU 

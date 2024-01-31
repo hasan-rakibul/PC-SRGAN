@@ -15,114 +15,18 @@ import os
 import queue
 import threading
 
-import cv2
-import numpy as np
 import torch
 from natsort import natsorted
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
-import warnings
 import pandas as pd
 
-from SRGAN_imgproc import image_to_tensor, image_resize
 from utils import numpy_to_compatible_tensor
 
 __all__ = [
-    "BaseImageDataset", "PairedImageDataset", "FEMPhyDataset",
+    "PairedImageDataset", "FEMPhyDataset",
     "PrefetchGenerator", "PrefetchDataLoader", "CPUPrefetcher", "CUDAPrefetcher",
 ]
-
-
-class BaseImageDataset(Dataset):
-    """Define training dataset loading methods."""
-
-    def __init__(
-            self,
-            gt_images_dir: str,
-            lr_images_dir: str,
-            upscale_factor: int = 4,
-            img_type: str = "npy",
-            has_subfolder: bool = True,
-            in_channels: int = 3
-    ) -> None:
-        """
-
-        Args:
-            gt_images_dir (str): Ground-truth image address.
-            lr_images_dir (str, optional): Low resolution image address. Default: ``None``
-            upscale_factor (int, optional): Image up scale factor. Default: 4
-        """
-
-        super(BaseImageDataset, self).__init__()
-        # check if the ground truth images folder is empty
-        if os.listdir(gt_images_dir) == 0:
-            raise RuntimeError("GT image folder is empty.")
-        # check if the image magnification meets the model requirements
-        if upscale_factor not in [2, 4, 8]:
-            raise RuntimeError("Upscale factor must be 2, 4, or 8.")
-
-        # Read a batch of low-resolution images
-        if lr_images_dir == "":
-            image_file_names = natsorted(os.listdir(gt_images_dir))
-            self.lr_image_file_names = None
-            if has_subfolder:
-                self.gt_image_file_names = []
-                for root, _, files in os.walk(gt_images_dir):
-                    for file in natsorted(files):
-                        self.gt_image_file_names.append(os.path.join(root, file))
-            else:
-                self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
-        else:
-            if os.listdir(lr_images_dir) == 0:
-                raise RuntimeError("LR image folder is empty.")
-            if has_subfolder:
-                self.gt_image_file_names = []
-                for root, _, files in os.walk(gt_images_dir):
-                    for file in natsorted(files):
-                        self.gt_image_file_names.append(os.path.join(root, file))
-
-                self.lr_image_file_names = []
-                for root, _, files in os.walk(lr_images_dir):
-                    for file in natsorted(files):
-                        self.lr_image_file_names.append(os.path.join(root, file))
-            else:
-                image_file_names = natsorted(os.listdir(lr_images_dir))
-                self.lr_image_file_names = [os.path.join(lr_images_dir, image_file_name) for image_file_name in image_file_names]
-                self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
-
-        self.upscale_factor = upscale_factor
-        self.img_type = img_type
-        self.in_channels = in_channels
-
-    def __getitem__(
-            self,
-            batch_index: int
-    ) -> [Tensor, Tensor]:
-        # Read a batch of ground truth images
-        if self.img_type == "npy":
-            gt_tensor = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index], self.in_channels)
-        else:
-            gt_image = cv2.imread(self.gt_image_file_names[batch_index]).astype(np.float32) / 255.
-            gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
-            gt_tensor = image_to_tensor(gt_image, False, False)
-
-        # Read a batch of low-resolution images
-        if self.lr_image_file_names is not None:
-            if self.img_type == "npy":
-                lr_tensor = numpy_to_compatible_tensor(self.lr_image_file_names[batch_index], self.in_channels)
-            else:
-                lr_image = cv2.imread(self.lr_image_file_names[batch_index]).astype(np.float32) / 255.
-                lr_image = cv2.cvtColor(lr_image, cv2.COLOR_BGR2RGB)
-                lr_tensor = image_to_tensor(lr_image, False, False)
-        else:
-            lr_tensor = image_resize(gt_tensor, 1 / self.upscale_factor)
-
-        return {"gt": gt_tensor,
-                "lr": lr_tensor}
-
-    def __len__(self) -> int:
-        return len(self.gt_image_file_names)
-
 
 class PairedImageDataset(Dataset):
     """Define Test dataset loading methods."""
@@ -131,7 +35,6 @@ class PairedImageDataset(Dataset):
             self,
             paired_gt_images_dir: str,
             paired_lr_images_dir: str,
-            img_type: str = "npy",
             has_subfolder: bool = False,
             in_channels: int = 3
     ) -> None:
@@ -166,26 +69,12 @@ class PairedImageDataset(Dataset):
             self.paired_gt_image_file_names = [os.path.join(paired_gt_images_dir, x) for x in image_files]
             self.paired_lr_image_file_names = [os.path.join(paired_lr_images_dir, x) for x in image_files]
         
-        self.img_type = img_type
         self.in_channels = in_channels
 
     def __getitem__(self, batch_index: int) -> [Tensor, Tensor, str]:
         # Read a batch of image data
-        if self.img_type == "npy":
-            gt_tensor = numpy_to_compatible_tensor(self.paired_gt_image_file_names[batch_index], self.in_channels)
-            lr_tensor = numpy_to_compatible_tensor(self.paired_lr_image_file_names[batch_index], self.in_channels)
-        else:
-            gt_image = cv2.imread(self.paired_gt_image_file_names[batch_index]).astype(np.float32) / 255.
-            lr_image = cv2.imread(self.paired_lr_image_file_names[batch_index]).astype(np.float32) / 255.
-
-            # BGR convert RGB
-            gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
-            lr_image = cv2.cvtColor(lr_image, cv2.COLOR_BGR2RGB)
-
-            # Convert image data into Tensor stream format (PyTorch).
-            # Note: The range of input and output is between [0, 1]
-            gt_tensor = image_to_tensor(gt_image, False, False)
-            lr_tensor = image_to_tensor(lr_image, False, False)
+        gt_tensor = numpy_to_compatible_tensor(self.paired_gt_image_file_names[batch_index], self.in_channels)
+        lr_tensor = numpy_to_compatible_tensor(self.paired_lr_image_file_names[batch_index], self.in_channels)
 
         return {"gt": gt_tensor,
                 "lr": lr_tensor,
@@ -314,28 +203,22 @@ class FEMPhyDataset(Dataset):
             self,
             gt_images_dir: str,
             lr_images_dir: str,
-            upscale_factor: int = 8,
-            img_type: str = "npy",
             has_subfolder: bool = True,
             in_channels: int = 1,
-            index_val_file: str = "data/reaction_diffusion_advection/index-val-mapping.csv",
+            index_val_file: str = "data/RDA/index-val-mapping.csv",
             start_sample: int = 49
     ) -> None:
         """
 
         Args:
             gt_images_dir (str): Ground-truth image address.
-            lr_images_dir (str, optional): Low resolution image address. Default: ``None``
-            upscale_factor (int, optional): Image up scale factor. Default: 4
+            lr_images_dir (str, optional): Low resolution image address.
         """
 
         super().__init__()
         # check if the ground truth images folder is empty
         if os.listdir(gt_images_dir) == 0:
             raise RuntimeError("GT image folder is empty.")
-        # check if the image magnification meets the model requirements
-        if upscale_factor not in [2, 4, 8]:
-            raise RuntimeError("Upscale factor must be 2, 4, or 8.")
 
         # Read a batch of low-resolution images
         if lr_images_dir == "":
@@ -366,8 +249,6 @@ class FEMPhyDataset(Dataset):
                 self.lr_image_file_names = [os.path.join(lr_images_dir, image_file_name) for image_file_name in image_file_names]
                 self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
 
-        self.upscale_factor = upscale_factor
-        self.img_type = img_type
         self.in_channels = in_channels
         self.index_val = pd.read_csv(index_val_file, index_col=0)
         self.start_sample = start_sample
@@ -382,7 +263,7 @@ class FEMPhyDataset(Dataset):
     def __getitem__(
             self,
             batch_index: int
-    ) -> [Tensor, Tensor, Tensor]:
+    ) -> [Tensor, Tensor, Tensor, Tensor, float, float, float, float]:
 
         # Read parameters
         param_name = self.gt_image_file_names[batch_index].split('/')[-2:-1][0] # get the name of the folder (parameter name)
@@ -392,39 +273,28 @@ class FEMPhyDataset(Dataset):
         theta = self.index_val.loc[param_name, 'theta']
 
         # Read a batch of ground truth images
-        if self.img_type == "npy":
-            gt_tensor = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index], self.in_channels)
-            # corner case. For index 0, 100, 200, etc., we don't have (n-1)th and (n-2)th frames because these are the first frame for solutions w.r.t. each set of parameters
-            current_sample = int(self.gt_image_file_names[batch_index].split('/')[-1].split('.')[0].split('u_n')[1])
-            gt_tensor_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 1)
-            gt_tensor_two_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 2)
-            
-            # if current_sample == self.start_sample:
-            #     gt_tensor_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 1)
-            #     gt_tensor_two_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 2)
-            # # corner case. For index 1, 101, 201, etc., we don't have (n-2)th frame because these are the second frame for solutions w.r.t. each set of parameters
-            # elif current_sample == self.start_sample + 1:
-            #     gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
-            #     gt_tensor_two_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 2)              
-            # else:
-            #     gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
-            #     gt_tensor_two_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-2], self.in_channels)
-        else:
-            warnings.warn('Getting previous frames is not implemented for image inputs.')
-            gt_image = cv2.imread(self.gt_image_file_names[batch_index]).astype(np.float32) / 255.
-            gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
-            gt_tensor = image_to_tensor(gt_image, False, False)
+        gt_tensor = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index], self.in_channels)
+        # corner case. For index 0, 100, 200, etc., we don't have (n-1)th and (n-2)th frames because these are the first frame for solutions w.r.t. each set of parameters
+        current_sample = int(self.gt_image_file_names[batch_index].split('/')[-1].split('.')[0].split('u_n')[1])
+        gt_tensor_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 1)
+        gt_tensor_two_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 2)
+        
+        # if current_sample == self.start_sample:
+        #     gt_tensor_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 1)
+        #     gt_tensor_two_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 2)
+        # # corner case. For index 1, 101, 201, etc., we don't have (n-2)th frame because these are the second frame for solutions w.r.t. each set of parameters
+        # elif current_sample == self.start_sample + 1:
+        #     gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
+        #     gt_tensor_two_prev = self._get_nth_prev_sample(self.gt_image_file_names[batch_index], current_sample, 2)              
+        # else:
+        #     gt_tensor_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-1], self.in_channels)
+        #     gt_tensor_two_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-2], self.in_channels)
 
         # Read a batch of low-resolution images
         if self.lr_image_file_names is not None:
-            if self.img_type == "npy":
-                lr_tensor = numpy_to_compatible_tensor(self.lr_image_file_names[batch_index], self.in_channels)
-            else:
-                lr_image = cv2.imread(self.lr_image_file_names[batch_index]).astype(np.float32) / 255.
-                lr_image = cv2.cvtColor(lr_image, cv2.COLOR_BGR2RGB)
-                lr_tensor = image_to_tensor(lr_image, False, False)
+            lr_tensor = numpy_to_compatible_tensor(self.lr_image_file_names[batch_index], self.in_channels)
         else:
-            lr_tensor = image_resize(gt_tensor, 1 / self.upscale_factor)
+            raise RuntimeError("LR image folder is empty and it is not handled.")
 
         return {
             "gt": gt_tensor,

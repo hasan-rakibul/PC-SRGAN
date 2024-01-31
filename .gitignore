@@ -3,6 +3,7 @@ tmp/
 data/
 samples/
 results/
+almost_unnecessary/
 
 *.pth.tar
 *.out

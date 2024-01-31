@@ -29,7 +29,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import SRGAN_model
-from physics import PhysicsLossImageBoundary, PhysicsLossInnerImageAllenCahn
+from physics import PhysicsLossImageBoundary, PhysicsLossInnerImageAllenCahn, H1Error
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset, FEMPhyDataset
 # from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
 from SRGAN_test import test
@@ -77,6 +77,7 @@ def main():
     best_psnr = 0.0
     best_ssim = 0.0
     best_mse = 0.0
+    best_h1 = 0.0
 
     # Define the running device number
     device = torch.device("cuda", config["DEVICE_ID"])
@@ -134,7 +135,8 @@ def main():
     # Initialize the image clarity evaluation method
     psnr_model = PeakSignalNoiseRatio(data_range=2.0).to(device)
     ssim_model = StructuralSimilarityIndexMeasure(data_range=2.0).to(device)
-    mse_model = MeanSquaredError().to(device)    
+    mse_model = MeanSquaredError().to(device)   
+    h1_model = H1Error().to(device) 
 
     # Create the folder where the model weights are saved
     samples_dir = os.path.join("samples", config["EXP_NAME"])
@@ -167,11 +169,12 @@ def main():
         g_scheduler.step()
         d_scheduler.step()
 
-        psnr, ssim, mse = test(g_model,
+        psnr, ssim, mse, h1 = test(g_model,
                           paired_test_data_prefetcher,
                           psnr_model,
                           ssim_model,
                           mse_model,
+                          h1_model,
                           device,
                           config)
         
@@ -179,17 +182,20 @@ def main():
         writer.add_scalar(f"Test/PSNR", psnr, epoch + 1)
         writer.add_scalar(f"Test/SSIM", ssim, epoch + 1)
         writer.add_scalar(f"Test/MSE", mse, epoch + 1)
+        writer.add_scalar(f"Test/H1", h1, epoch + 1)
 
         # Automatically save model weights
         is_best = psnr > best_psnr and ssim > best_ssim
         is_last = (epoch + 1) == config["TRAIN"]["HYP"]["EPOCHS"]
         best_psnr = max(psnr, best_psnr)
         best_ssim = max(ssim, best_ssim)
-        best_mse = max(mse, best_mse)
+        best_mse = min(mse, best_mse)
+        best_h1 = min(h1, best_h1)
         save_checkpoint({"epoch": epoch + 1,
                          "psnr": psnr,
                          "ssim": ssim,
                          "mse": mse,
+                         "h1": h1,
                          "state_dict": g_model.state_dict(),
                          "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
                          "optimizer": g_optimizer.state_dict(),
@@ -205,6 +211,7 @@ def main():
                          "psnr": psnr,
                          "ssim": ssim,
                          "mse": mse,
+                         "h1": h1,
                          "state_dict": d_model.state_dict(),
                          "optimizer": d_optimizer.state_dict(),
                          "scheduler": d_scheduler.state_dict()},
@@ -224,13 +231,10 @@ def load_dataset(
         device: torch.device,
 ) -> [CUDAPrefetcher, CUDAPrefetcher]:
     # Load the train dataset
-
-    # degenerated_train_datasets = BaseImageDataset(    
+   
     degenerated_train_datasets = FEMPhyDataset(
         config["TRAIN"]["DATASET"]["TRAIN_GT_IMAGES_DIR"],
         config["TRAIN"]["DATASET"]["TRAIN_LR_IMAGES_DIR"],
-        config["SCALE"],
-        config["TRAIN"]["DATASET"]["IMG_TYPE"],
         config["TRAIN"]["DATASET"]["HAS_SUBFOLDER"],
         config["MODEL"]["G"]["IN_CHANNELS"],
         config["TRAIN"]["DATASET"]["INDEX_VAL_MAPPING"],
@@ -239,7 +243,6 @@ def load_dataset(
     # Load the registration test dataset
     paired_test_datasets = PairedImageDataset(config["TEST"]["DATASET"]["PAIRED_TEST_GT_IMAGES_DIR"],
                                               config["TEST"]["DATASET"]["PAIRED_TEST_LR_IMAGES_DIR"],
-                                              config["TEST"]["DATASET"]["IMG_TYPE"],
                                               config["TEST"]["DATASET"]["HAS_SUBFOLDER"],
                                               config["MODEL"]["G"]["IN_CHANNELS"])
 
@@ -500,12 +503,6 @@ def train(
             pixel_loss = torch.sum(torch.mul(pixel_weight, pixel_loss))
             feature_loss = torch.sum(torch.mul(feature_weight, feature_loss))
             adversarial_loss = torch.sum(torch.mul(adversarial_weight, adversarial_loss))
-
-            # Compute generator total loss
-            # upto epoch 2, we don't add physics loss
-            # if epoch < 2:
-            #     g_loss = pixel_loss + feature_loss + adversarial_loss
-            # else: 
 
             if physics:
                 # adding physics loss

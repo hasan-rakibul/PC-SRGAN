@@ -16,26 +16,25 @@ import os
 import time
 from typing import Any
 
-import cv2
 import torch
 import yaml
 from torch import nn
 from torch.utils.data import DataLoader
-import numpy as np
 
 import SRGAN_model
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset
-from SRGAN_imgproc import tensor_to_image
 from SRGAN_utils import load_pretrained_state_dict, AverageMeter, ProgressMeter, Summary
 
 from torchmetrics.image import StructuralSimilarityIndexMeasure, PeakSignalNoiseRatio
 from torchmetrics.regression import MeanSquaredError
 
+from physics import H1Error
+
+from utils import save_as_plot
 
 def load_dataset(config: Any, device: torch.device) -> CUDAPrefetcher:
     test_datasets = PairedImageDataset(config["TEST"]["DATASET"]["PAIRED_TEST_GT_IMAGES_DIR"],
                                        config["TEST"]["DATASET"]["PAIRED_TEST_LR_IMAGES_DIR"],
-                                       config["TEST"]["DATASET"]["IMG_TYPE"],
                                        config["TEST"]["DATASET"]["HAS_SUBFOLDER"]
                                        )
     test_dataloader = DataLoader(test_datasets,
@@ -70,6 +69,7 @@ def test(
         psnr_model,
         ssim_model,
         mse_model,
+        h1_model,
         device: torch.device,
         config: Any,
 ) -> [float, float]:
@@ -99,8 +99,9 @@ def test(
     psnres = AverageMeter("PSNR", ":4.2f", Summary.AVERAGE)
     ssimes = AverageMeter("SSIM", ":4.4f", Summary.AVERAGE)
     mses = AverageMeter("MSE", ":4.4f", Summary.AVERAGE)
+    h1s = AverageMeter("H1", ":4.4f", Summary.AVERAGE)
     progress = ProgressMeter(len(test_data_prefetcher),
-                             [batch_time, psnres, ssimes, mses],
+                             [batch_time, psnres, ssimes, mses, h1s],
                              prefix=f"Test: ")
 
     # set the model as validation model
@@ -129,6 +130,7 @@ def test(
             psnr = psnr_model(sr, gt)
             ssim = ssim_model(sr, gt)
             mse = mse_model(sr, gt)
+            h1 = h1_model(sr, gt)
 
             # record current metrics
             # psnres.update(psnr.item(), sr.size(0))
@@ -139,6 +141,7 @@ def test(
             psnres.update(psnr.item())
             ssimes.update(ssim.item())
             mses.update(mse.item())
+            h1s.update(h1.item())
 
             # Record the total time to verify a batch
             batch_time.update(time.time() - end)
@@ -161,18 +164,21 @@ def test(
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
 
-                sr_image = tensor_to_image(sr, False, False)
-                sr_image = cv2.cvtColor(sr_image, cv2.COLOR_RGB2BGR)
-                # retain only R channel
-                # sr_image = sr_image[:, :, 0]
-                sr_image[:, :, 0] = sr_image[:, :, 1] = 0 # set G and B channel to 0, taken from https://stackoverflow.com/a/60288650
-                if not cv2.imwrite(os.path.join(save_dir, image_name), sr_image):
-                    raise ValueError(f"Save image `{image_name}` failed.")
+                save_as_plot(sr.cpu().numpy().squeeze(0).squeeze(0), os.path.join(save_dir, image_name))
+
+                # sr_image = tensor_to_image(sr, range_norm=True, half=False) # range_norm=True means converting from [-1, 1] to [0, 1]
+                # sr_image = cv2.cvtColor(sr_image, cv2.COLOR_RGB2BGR)
+                # # retain only R channel
+                # # sr_image = sr_image[:, :, 0]
+                # sr_image[:, :, 0] = sr_image[:, :, 1] = 0 # set G and B channel to 0, taken from https://stackoverflow.com/a/60288650
+                # if not cv2.imwrite(os.path.join(save_dir, image_name), sr_image):
+                #     raise ValueError(f"Save image `{image_name}` failed.")
                 
             # Save the difference between the processed image and the original image
             if save_image_diff:
                 file_name = os.path.basename(batch_data["image_name"][0])
-                file_name = image_name.split(".")[0] + ".txt"
+                # file_name = image_name.split(".")[0] + ".txt"
+                file_name = image_name.split(".")[0] + ".png"
 
                 last_folder = os.path.join(*(batch_data["image_name"][0].split('/')[-2:-1])) # taking the last one folder name
                 save_dir = os.path.join(save_image_diff_dir, last_folder)
@@ -185,7 +191,8 @@ def test(
 
                 img_diff = img_diff.squeeze(0).squeeze(0) # remove batch and channel dimension
 
-                np.savetxt(os.path.join(save_dir, file_name), img_diff, fmt='%.2e')
+                save_as_plot(img_diff, os.path.join(save_dir, file_name))
+                # np.savetxt(os.path.join(save_dir, file_name), img_diff, fmt='%.2e')
 
             # Preload the next batch of data
             batch_data = test_data_prefetcher.next()
@@ -196,7 +203,7 @@ def test(
     # Print the performance index of the model at the current Epoch
     progress.display_summary()
 
-    return psnres.avg, ssimes.avg, mses.avg
+    return psnres.avg, ssimes.avg, mses.avg, h1s.avg
 
 
 def main() -> None:
@@ -218,22 +225,24 @@ def main() -> None:
     psnr_model = PeakSignalNoiseRatio(data_range=2.0).to(device)
     ssim_model = StructuralSimilarityIndexMeasure(data_range=2.0).to(device)
     mse_model = MeanSquaredError().to(device)
+    h1_model = H1Error().to(device)
 
     # Load model weights
     g_model = load_pretrained_state_dict(g_model, config["MODEL"]["G"]["COMPILED"], config["MODEL_WEIGHTS_PATH"])
 
-    psnr_avg, ssim_avg, mse_avg = test(g_model,
+    psnr_avg, ssim_avg, mse_avg, h1_avg = test(g_model,
          test_data_prefetcher,
          psnr_model,
          ssim_model,
          mse_model,
+         h1_model,
          device,
          config)
     
     # append the results to a csv file
     csv_path = os.path.join(config["TEST"]["SAVE_IMAGE_DIR"], "all_test_results.csv")
     with open(csv_path, 'a') as f:
-        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg},{mse_avg}\n")
+        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg},{mse_avg},{h1_avg}\n")
 
 
 if __name__ == "__main__":

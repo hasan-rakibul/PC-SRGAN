@@ -2,15 +2,15 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic-BC_weight-increased-bd5
+EXP_NAME: no_physics_h1_normalised
 # random number seed
 SEED: 0
 # Super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 0
+DEVICE_ID: 3
 # Model weights path
-MODEL_WEIGHTS_PATH: "./samples/Allen-Cahn_Periodic-BC_weight-increased-bd5/g_epoch_15.pth.tar"
+MODEL_WEIGHTS_PATH: ./results/RDA_no_physics/g_best.pth.tar
 
 # Model define
 MODEL:
@@ -24,9 +24,8 @@ MODEL:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic-BC_reaction_diffusion_advection/validation/mesh_7
-    IMG_TYPE: "npy"
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/RDA/validation/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/RDA/validation/mesh_7
     HAS_SUBFOLDER: True
 
   # Test hyperparameters
@@ -37,10 +36,9 @@ TEST:
     PIN_MEMORY: True
     PERSISTENT_WORKERS: True
 
-  # Only test Y channel
-  ONLY_TEST_Y_CHANNEL: False
-
-  SAVE_IMAGE_DIR: ./results/test/
+  # SAVE_IMAGE_DIR: ./results/test/
+  SAVE_IMAGE_DIR: ""
 
   # saving the difference between the ground truth and the prediction
-  SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
+  # SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
+  SAVE_IMAGE_DIFF_DIR: ""

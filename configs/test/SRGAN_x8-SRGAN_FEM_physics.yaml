@@ -1,0 +1,44 @@
+# Collected from https://github.com/Lornatang/SRGAN-PyTorch
+# =========================================================
+
+# experiment name
+EXP_NAME: physics_h1_normalised
+# random number seed
+SEED: 0
+# Super resolution magnification factor
+SCALE: 8
+# run device model
+DEVICE_ID: 2
+# Model weights path
+MODEL_WEIGHTS_PATH: ./results/RDA_inner_1e-8_boundary_5/g_best.pth.tar
+
+# Model define
+MODEL:
+  G:
+    NAME: srresnet_x8
+    IN_CHANNELS: 1
+    OUT_CHANNELS: 1
+    CHANNELS: 64
+    NUM_RCB: 16
+    COMPILED: False
+
+TEST:
+  DATASET:
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/RDA/validation/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/RDA/validation/mesh_7
+    HAS_SUBFOLDER: True
+
+  # Test hyperparameters
+  HYP:
+    IMGS_PER_BATCH: 1 # should be always 1 as the metrics can't handle batched data
+    SHUFFLE: False
+    NUM_WORKERS: 1
+    PIN_MEMORY: True
+    PERSISTENT_WORKERS: True
+
+  # SAVE_IMAGE_DIR: ./results/test/
+  SAVE_IMAGE_DIR: ""
+
+  # saving the difference between the ground truth and the prediction
+  # SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
+  SAVE_IMAGE_DIFF_DIR: ""
