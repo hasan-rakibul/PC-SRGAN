@@ -20,6 +20,7 @@ import torch
 import yaml
 from torch import nn
 from torch.utils.data import DataLoader
+import numpy as np
 
 import SRGAN_model
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset
@@ -94,6 +95,7 @@ def test(
         print_freq = 100
     else:
         print_freq = batches
+    # print_freq = 1
     # The information printed by the progress bar
     batch_time = AverageMeter("Time", ":6.3f", Summary.SUM) # Summary.** controls what prints at the end of each test cycle
     psnres = AverageMeter("PSNR", ":4.2f", Summary.AVERAGE)
@@ -155,16 +157,19 @@ def test(
             if batch_data["image_name"] == "":
                 raise ValueError("The image_name is None, please check the dataset.")
             if save_image:
-                image_name = os.path.basename(batch_data["image_name"][0])
-                image_name = image_name.split(".")[0] + ".png" # cannot save as npy
+                np_image_name = os.path.basename(batch_data["image_name"][0])
+                image_name = np_image_name.split(".")[0] + ".png" # cannot save as npy
 
                 last_folder = os.path.join(*(batch_data["image_name"][0].split('/')[-2:-1])) # taking the last one folder name
                 save_dir = os.path.join(save_image_dir, last_folder)
                 # create dir
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
+                
+                sr_np = sr.cpu().numpy().squeeze(0).squeeze(0)
 
-                save_as_plot(sr.cpu().numpy().squeeze(0).squeeze(0), os.path.join(save_dir, image_name))
+                np.save(os.path.join(save_dir, np_image_name), sr_np)
+                save_as_plot(sr_np, os.path.join(save_dir, image_name))
 
                 # sr_image = tensor_to_image(sr, range_norm=True, half=False) # range_norm=True means converting from [-1, 1] to [0, 1]
                 # sr_image = cv2.cvtColor(sr_image, cv2.COLOR_RGB2BGR)

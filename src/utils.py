@@ -1,11 +1,11 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-import scienceplots
+# import scienceplots
 
 # require LaTeX for scienceplots. Comment the following line if you have no LaTeX installed
 # may become slower by the way
-plt.style.use(['science', 'tableau-colorblind10'])
+# plt.style.use(['science', 'tableau-colorblind10'])
 
 def numpy_to_compatible_tensor(file_name: str, in_channels: int) -> torch.Tensor:
     """
@@ -35,5 +35,6 @@ def save_as_plot(input_data: np.ndarray, file_name: str) -> None:
     """
     plt.imshow(input_data, cmap='jet', extent=[0, 1, 0, 1])
     plt.colorbar()
-    plt.savefig(file_name, dpi=300, bbox_inches='tight')
+    # plt.savefig(file_name, dpi=300, bbox_inches='tight')
+    plt.savefig(file_name, bbox_inches='tight')
     plt.close()

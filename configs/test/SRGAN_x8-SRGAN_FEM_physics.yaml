@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: physics_h1_normalised
+EXP_NAME: physics_actual_test
 # random number seed
 SEED: 0
 # Super resolution magnification factor
@@ -24,8 +24,8 @@ MODEL:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/RDA/validation/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/RDA/validation/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/RDA/test/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/RDA/test/mesh_7
     HAS_SUBFOLDER: True
 
   # Test hyperparameters
@@ -36,9 +36,9 @@ TEST:
     PIN_MEMORY: True
     PERSISTENT_WORKERS: True
 
-  # SAVE_IMAGE_DIR: ./results/test/
-  SAVE_IMAGE_DIR: ""
+  SAVE_IMAGE_DIR: ./results/test/
+  # SAVE_IMAGE_DIR: ""
 
   # saving the difference between the ground truth and the prediction
-  # SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
-  SAVE_IMAGE_DIFF_DIR: ""
+  SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
+  # SAVE_IMAGE_DIFF_DIR: ""

@@ -1,7 +1,39 @@
 import torch
 from torch import nn, Tensor
 from torch.nn import functional as F_torch
+from functools import reduce
+
+def calculate_image_derivative(img: Tensor) -> [Tensor, Tensor]:        
+    # Filter kernels
+    k = Tensor([1., 3.5887, 1.]) # or [3., 10., 3.] or [17., 61., 17.]
+    d = Tensor([1., 0., -1.])
+    gy = torch.outer(k, d)
+    gx = gy.transpose(0, 1)
+
+    coeff = - 5.645298778954285 # empirically found through comparing with analytical solutions
+
+    img_dx = coeff * F_torch.conv2d(img, gx.view(1, 1, 3, 3).to(img.device))
+    img_dy = coeff * F_torch.conv2d(img, gy.view(1, 1, 3, 3).to(img.device))
+
+    return img_dx, img_dy
+
+def calculate_image_laplacian(img: Tensor) -> Tensor:
+
+    # Filter kernel
+    g = torch.Tensor([[0., 1., 0.],
+                    [1., 4., 1.],
+                    [0., 1., 0.]])
+
+    coeff = - 9.880939350316519 # empirically found through comparing with analytical solutions
     
+    img_lap = coeff * F_torch.conv2d(img, g.view(1, 1, 3, 3).to(img.device))
+        
+    return img_lap
+
+def remove_boundary(tensor: Tensor) -> Tensor:
+        # (batch, channel, 64, 64) -> (batch, channel, 62, 62)
+        return tensor[:, :, 1:-1, 1:-1]
+
 class PhysicsLossInnerImage(nn.Module):
     """Constructs a physics-based loss function for the inner side of the image (w/o boundary pixels).
      """
@@ -31,9 +63,9 @@ class PhysicsLossInnerImage(nn.Module):
         b2 = b2.unsqueeze(1).unsqueeze(2).unsqueeze(3)
 
         # remove boundary
-        sr_tensor_wo_bd = self._remove_boundary(sr_tensor)
-        gt_tensor_prev_wo_bd = self._remove_boundary(gt_tensor_prev)
-        gt_tensor_two_prev_wo_bd = self._remove_boundary(gt_tensor_two_prev)
+        sr_tensor_wo_bd = remove_boundary(sr_tensor)
+        gt_tensor_prev_wo_bd = remove_boundary(gt_tensor_prev)
+        gt_tensor_two_prev_wo_bd = remove_boundary(gt_tensor_two_prev)
 
         # contributed by Pouria Behnoudfar
         # losses = (
@@ -59,10 +91,10 @@ class PhysicsLossInnerImage(nn.Module):
         # sr_tensor = self.normalize(sr_tensor)
         # gt_tensor = self.normalize(gt_tensor)
 
-        img_dx, img_dy = self._calculate_image_derivative(img)
-        img_lap = self._calculate_image_laplacian(img)
+        img_dx, img_dy = calculate_image_derivative(img)
+        img_lap = calculate_image_laplacian(img)
 
-        img = self._remove_boundary(img)
+        img = remove_boundary(img)
 
         # contributed by Pouria Behnoudfar
         spatial_op = (
@@ -72,37 +104,6 @@ class PhysicsLossInnerImage(nn.Module):
         )
         
         return spatial_op
-
-    def _calculate_image_derivative(self, img: Tensor) -> [Tensor, Tensor]:        
-        # Filter kernels
-        k = Tensor([1., 3.5887, 1.]) # or [3., 10., 3.] or [17., 61., 17.]
-        d = Tensor([1., 0., -1.])
-        gy = torch.outer(k, d)
-        gx = gy.transpose(0, 1)
-
-        coeff = - 5.645298778954285 # empirically found through comparing with analytical solutions
-
-        img_dx = coeff * F_torch.conv2d(img, gx.view(1, 1, 3, 3).to(self.device))
-        img_dy = coeff * F_torch.conv2d(img, gy.view(1, 1, 3, 3).to(self.device))
-
-        return img_dx, img_dy
-
-    def _calculate_image_laplacian(self, img: Tensor) -> Tensor:
-
-        # Filter kernel
-        g = torch.Tensor([[0., 1., 0.],
-                        [1., 4., 1.],
-                        [0., 1., 0.]])
-
-        coeff = - 9.880939350316519 # empirically found through comparing with analytical solutions
-        
-        img_lap = coeff * F_torch.conv2d(img, g.view(1, 1, 3, 3).to(self.device))
-            
-        return img_lap
-    
-    def _remove_boundary(self, tensor: Tensor) -> Tensor:
-        # (batch, channel, 64, 64) -> (batch, channel, 62, 62)
-        return tensor[:, :, 1:-1, 1:-1]
     
     def sanity_check(self, img):
         img_dx, img_dy = self._calculate_image_derivative(img)
@@ -113,8 +114,8 @@ class PhysicsLossInnerImage(nn.Module):
         print(left, left.shape)
         print('---')
 
-        img_lap = self._calculate_image_laplacian(img)
-        img_lap = self._remove_boundary(img_lap)
+        img_lap = calculate_image_laplacian(img)
+        img_lap = remove_boundary(img_lap)
         print(img_lap, img_lap.shape)
         assert left.shape == img_lap.shape
 
@@ -187,9 +188,9 @@ class PhysicsLossInnerImageAllenCahn(PhysicsLossInnerImage):
         theta = theta.unsqueeze(1).unsqueeze(2).unsqueeze(3)
 
         # remove boundary
-        sr_tensor_wo_bd = self._remove_boundary(sr_tensor)
-        gt_tensor_prev_wo_bd = self._remove_boundary(gt_tensor_prev)
-        gt_tensor_two_prev_wo_bd = self._remove_boundary(gt_tensor_two_prev)
+        sr_tensor_wo_bd = remove_boundary(sr_tensor)
+        gt_tensor_prev_wo_bd = remove_boundary(gt_tensor_prev)
+        gt_tensor_two_prev_wo_bd = remove_boundary(gt_tensor_two_prev)
 
         # contributed by Pouria Behnoudfar
         losses = (
@@ -208,9 +209,9 @@ class PhysicsLossInnerImageAllenCahn(PhysicsLossInnerImage):
 
     def _calculate_spatial_operators(self, eps: Tensor, K: Tensor, b1:Tensor, b2:Tensor, img: Tensor, theta: Tensor) -> Tensor:
         # img_dx, img_dy = self._calculate_image_derivative(img)
-        img_lap = self._calculate_image_laplacian(img)
+        img_lap = calculate_image_laplacian(img)
 
-        img = self._remove_boundary(img)
+        img = remove_boundary(img)
 
         # contributed by Pouria Behnoudfar
         spatial_op = (
@@ -261,10 +262,17 @@ class H1Error(PhysicsLossInnerImage):
         # get device
         self.device = sr_tensor.device
 
-        sr_dx, sr_dy = self._calculate_image_derivative(sr_tensor)
-        gt_dx, gt_dy = self._calculate_image_derivative(gt_tensor)
+        sr_dx, sr_dy = calculate_image_derivative(sr_tensor)
+        gt_dx, gt_dy = calculate_image_derivative(gt_tensor)
+        
+        # DX = sr_dx - gt_dx
+        # DY = sr_dy - gt_dy
+        # h1_error= torch.square(DX) + torch.square(DY)
+        # shape = h1_error.shape
+        # num_ele = reduce(lambda x, y: x*y, shape)
+        # h1_error = torch.sum(h1_error) / num_ele
 
         h1_error = F_torch.mse_loss(sr_dx, gt_dx) + F_torch.mse_loss(sr_dy, gt_dy)
-        h1_ = F_torch.mse_loss(gt_dx, torch.zeros_like(gt_dx)) + F_torch.mse_loss(gt_dy, torch.zeros_like(gt_dy))
+        # h1_ = F_torch.mse_loss(gt_dx, torch.zeros_like(gt_dx)) + F_torch.mse_loss(gt_dy, torch.zeros_like(gt_dy))
 
-        return h1_error/h1_
+        return h1_error
