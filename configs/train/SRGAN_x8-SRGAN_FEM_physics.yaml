@@ -3,7 +3,7 @@
 
 
 # experiment name
-EXP_NAME: test
+EXP_NAME: RDA_inner_1e-8_boundary_5_EE
 # random number seed
 SEED: 0
 # super resolution magnification factor
@@ -51,15 +51,14 @@ TRAIN:
     # PRETRAINED_G_MODEL: ./results/pretrained_models/SRResNet_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
-    # RESUMED_G_MODEL: ""
-    # RESUMED_D_MODEL: ""
-    RESUMED_G_MODEL: ./samples/RDA_inner_1e-8_boundary_5/g_epoch_17.pth.tar
-    RESUMED_D_MODEL: ./samples/RDA_inner_1e-8_boundary_5/d_epoch_17.pth.tar
+    RESUMED_G_MODEL: ""
+    RESUMED_D_MODEL: ""
+    # RESUMED_G_MODEL: ./samples/RDA_inner_1e-8_boundary_5_BDF/g_epoch_.pth.tar
+    # RESUMED_D_MODEL: ./samples/RDA_inner_1e-8_boundary_5_BDF/d_epoch_.pth.tar
 
   # training hyperparameters
   HYP:
     EPOCHS: 100
-
     IMGS_PER_BATCH: 16
     SHUFFLE: True
     NUM_WORKERS: 4
@@ -98,8 +97,10 @@ TRAIN:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
-      INNER_WEIGHT: [ 0.00000001 ] # the original val is  .000000001
+      INNER_WEIGHT: [ 0.00000001 ]
+      TIME_INTEGRATOR: EE #Options: BDF, CN, EE
       BOUNDARY_WEIGHT: [ 5 ]
+      BOUNDARY_TYPE: Periodic #Options: Dirichlet, Periodic, Neumann
 
   PRINT_PER_BATCH: False
   PRINT_BATCH_FREQ: 100
@@ -108,7 +109,6 @@ TEST:
   DATASET:
     PAIRED_TEST_GT_IMAGES_DIR: ./data/RDA/validation/mesh_63
     PAIRED_TEST_LR_IMAGES_DIR: ./data/RDA/validation/mesh_7
-    IMG_TYPE: npy
     HAS_SUBFOLDER: True
 
   # Test hyperparameters

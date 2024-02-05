@@ -130,8 +130,10 @@ class PhysicsLossImageBoundary(nn.Module):
     """Constructs a physics-based loss function for the boundary of the image.
      """
 
-    def __init__(self) -> None:
+    def __init__(self, boundary_type: str) -> None:
         super().__init__()
+        self.boundary_type = boundary_type
+        assert self.boundary_type in ['Dirichlet', 'Periodic', 'Neumann'], "Boundary type must be one of ['Dirichlet', 'Periodic', 'Neumann']"
 
     def forward(self, sr_tensor: Tensor, gt_tensor: Tensor) -> Tensor:
         
@@ -141,31 +143,45 @@ class PhysicsLossImageBoundary(nn.Module):
         # input normalization
         # sr_tensor = self.normalize(sr_tensor)
 
-        ## Dirichlet boundary conditions
-        # losses_top = F_torch.mse_loss(sr_tensor[:, :, 0, :], gt_tensor[:, :, 0, :]).to(self.device)
-        # losses_bottom = F_torch.mse_loss(sr_tensor[:, :, -1, :], gt_tensor[:, :, -1, :]).to(self.device)
-        # losses_left = F_torch.mse_loss(sr_tensor[:, :, 1:-1, 0], gt_tensor[:, :, 1:-1, 0]).to(self.device) # due to overalp, remove 1 pixel from top and bottom
-        # losses_right = F_torch.mse_loss(sr_tensor[:, :, 1:-1, -1], gt_tensor[:, :, 1:-1, -1]).to(self.device)
+        if self.boundary_type == 'Dirichlet':
+            ## Dirichlet boundary conditions
+            losses_top = F_torch.mse_loss(sr_tensor[:, :, 0, :], gt_tensor[:, :, 0, :]).to(self.device)
+            losses_bottom = F_torch.mse_loss(sr_tensor[:, :, -1, :], gt_tensor[:, :, -1, :]).to(self.device)
+            losses_left = F_torch.mse_loss(sr_tensor[:, :, 1:-1, 0], gt_tensor[:, :, 1:-1, 0]).to(self.device) # due to overalp, remove 1 pixel from top and bottom
+            losses_right = F_torch.mse_loss(sr_tensor[:, :, 1:-1, -1], gt_tensor[:, :, 1:-1, -1]).to(self.device)
+            
+            losses = losses_top + losses_bottom + losses_left + losses_right
+        
+        elif self.boundary_type == 'Periodic':
+            ## Periodic boundary conditions
+            losses_top_bottom = F_torch.mse_loss(sr_tensor[:, :, 0, :], sr_tensor[:, :, -1, :]).to(self.device)
+            losses_left_right = F_torch.mse_loss(sr_tensor[:, :, 1:-1, 0], sr_tensor[:, :, 1:-1, -1]).to(self.device) # due to overalp, remove 1 pixel from top and bottom
 
-        # losses = losses_top + losses_bottom + losses_left + losses_right
+            losses = losses_left_right + losses_top_bottom
 
-        ## Periodic boundary conditions
-        losses_top_bottom = F_torch.mse_loss(sr_tensor[:, :, 0, :], sr_tensor[:, :, -1, :]).to(self.device)
-        losses_left_right = F_torch.mse_loss(sr_tensor[:, :, 1:-1, 0], sr_tensor[:, :, 1:-1, -1]).to(self.device) # due to overalp, remove 1 pixel from top and bottom
+        elif self.boundary_type == 'Neumann':
+            ## Neumann boundary conditions
+            losses_top = F_torch.mse_loss(sr_tensor[:, :, 0, :], sr_tensor[:, :, 1, :]).to(self.device)
+            losses_bottom = F_torch.mse_loss(sr_tensor[:, :, -1, :], sr_tensor[:, :, -2, :]).to(self.device)
+            losses_left = F_torch.mse_loss(sr_tensor[:, :, 1:-1, 0], sr_tensor[:, :, 1:-1, 1]).to(self.device)
+            losses_right = F_torch.mse_loss(sr_tensor[:, :, 1:-1, -1], sr_tensor[:, :, 1:-1, -2]).to(self.device)
 
-        losses = losses_left_right + losses_top_bottom
+            losses = losses_top + losses_bottom + losses_left + losses_right
 
         return losses
     
-class PhysicsLossInnerImageAllenCahn(PhysicsLossInnerImage):
+class PhysicsLossInnerImageAllenCahn(nn.Module):
     """Constructs a physics-based loss function for the inner side of the image (w/o boundary pixels).
      """
 
-    def __init__(self) -> None:
+    def __init__(self, time_integrator: str) -> None:
         super().__init__()
 
         # FEM data generation parameters
         self.delta_t = 0.001 / 100 # T/n_samples
+        self.time_integrator = time_integrator
+
+        assert self.time_integrator in ['BDF', 'CN', 'EE'], "Time integrator must be one of ['BDF', 'CN', 'EE']"
 
     def forward(
             self, sr_tensor: Tensor, gt_tensor: Tensor, gt_tensor_prev: Tensor, gt_tensor_two_prev: Tensor,
@@ -193,15 +209,24 @@ class PhysicsLossInnerImageAllenCahn(PhysicsLossInnerImage):
         gt_tensor_two_prev_wo_bd = remove_boundary(gt_tensor_two_prev)
 
         # contributed by Pouria Behnoudfar
-        losses = (
+        if self.time_integrator == 'BDF':
             # BDF time integrator
-            3/2/ self.delta_t * (sr_tensor_wo_bd - 4/3*gt_tensor_prev_wo_bd+ 1/3*gt_tensor_two_prev_wo_bd)
-            + self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor, theta)
-
+            losses = (
+                3/2/ self.delta_t * (sr_tensor_wo_bd - 4/3*gt_tensor_prev_wo_bd+ 1/3*gt_tensor_two_prev_wo_bd)
+                + self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor, theta)
+            )
+        elif self.time_integrator == 'CN':
             # Crank-Nicolson Time integrator
-            # self.delta_t * (sr_tensor_wo_bd - gt_tensor_prev_wo_bd)
-            # +1/2*( self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor, theta) + self._calculate_spatial_operators(eps, K, b1, b2, gt_tensor_prev, theta))
-        )
+            losses = (
+                self.delta_t * (sr_tensor_wo_bd - gt_tensor_prev_wo_bd)
+                +1/2*( self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor, theta) + self._calculate_spatial_operators(eps, K, b1, b2, gt_tensor_prev, theta))
+            )
+        elif self.time_integrator == 'EE':
+            # Euler Explicit Time integrator
+            losses = (
+                self.delta_t * (sr_tensor_wo_bd - gt_tensor_prev_wo_bd)
+                + self._calculate_spatial_operators(eps, K, b1, b2, gt_tensor_prev, theta) 
+            )
         
         losses = F_torch.mse_loss(losses, torch.zeros_like(losses).to(self.device))
 

@@ -108,7 +108,6 @@ TEST:
   DATASET:
     PAIRED_TEST_GT_IMAGES_DIR: ./data/RDA/validation/mesh_63
     PAIRED_TEST_LR_IMAGES_DIR: ./data/RDA/validation/mesh_7
-    IMG_TYPE: npy
     HAS_SUBFOLDER: True
 
   # Test hyperparameters

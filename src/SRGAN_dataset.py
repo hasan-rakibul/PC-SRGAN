@@ -219,35 +219,24 @@ class FEMPhyDataset(Dataset):
         # check if the ground truth images folder is empty
         if os.listdir(gt_images_dir) == 0:
             raise RuntimeError("GT image folder is empty.")
+        if os.listdir(lr_images_dir) == 0:
+            raise RuntimeError("LR image folder is empty.")
 
-        # Read a batch of low-resolution images
-        if lr_images_dir == "":
-            image_file_names = natsorted(os.listdir(gt_images_dir))
-            self.lr_image_file_names = None
-            if has_subfolder:
-                self.gt_image_file_names = []
-                for root, _, files in os.walk(gt_images_dir):
-                    for file in natsorted(files):
-                        self.gt_image_file_names.append(os.path.join(root, file))
-            else:
-                self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
+        # Read a batch of high- and low-resolution images
+        if has_subfolder:
+            self.gt_image_file_names = []
+            for root, _, files in os.walk(gt_images_dir):
+                for file in natsorted(files):
+                    self.gt_image_file_names.append(os.path.join(root, file))
+
+            self.lr_image_file_names = []
+            for root, _, files in os.walk(lr_images_dir):
+                for file in natsorted(files):
+                    self.lr_image_file_names.append(os.path.join(root, file))
         else:
-            if os.listdir(lr_images_dir) == 0:
-                raise RuntimeError("LR image folder is empty.")
-            if has_subfolder:
-                self.gt_image_file_names = []
-                for root, _, files in os.walk(gt_images_dir):
-                    for file in natsorted(files):
-                        self.gt_image_file_names.append(os.path.join(root, file))
-
-                self.lr_image_file_names = []
-                for root, _, files in os.walk(lr_images_dir):
-                    for file in natsorted(files):
-                        self.lr_image_file_names.append(os.path.join(root, file))
-            else:
-                image_file_names = natsorted(os.listdir(lr_images_dir))
-                self.lr_image_file_names = [os.path.join(lr_images_dir, image_file_name) for image_file_name in image_file_names]
-                self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
+            image_file_names = natsorted(os.listdir(lr_images_dir))
+            self.lr_image_file_names = [os.path.join(lr_images_dir, image_file_name) for image_file_name in image_file_names]
+            self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
 
         self.in_channels = in_channels
         self.index_val = pd.read_csv(index_val_file, index_col=0)
@@ -291,10 +280,7 @@ class FEMPhyDataset(Dataset):
         #     gt_tensor_two_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-2], self.in_channels)
 
         # Read a batch of low-resolution images
-        if self.lr_image_file_names is not None:
-            lr_tensor = numpy_to_compatible_tensor(self.lr_image_file_names[batch_index], self.in_channels)
-        else:
-            raise RuntimeError("LR image folder is empty and it is not handled.")
+        lr_tensor = numpy_to_compatible_tensor(self.lr_image_file_names[batch_index], self.in_channels)
 
         return {
             "gt": gt_tensor,

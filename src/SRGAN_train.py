@@ -223,7 +223,7 @@ def main():
                         is_best,
                         is_last)
 
-        print("\tCumulative time elapsed during current training: {:.2f}min".format((time.time() - start_time) / 60))
+        print("Cumulative time elapsed during current training: {:.2f}min".format((time.time() - start_time) / 60))
         print("\n")
 
 def load_dataset(
@@ -340,8 +340,8 @@ def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.C
     adversarial_criterion = adversarial_criterion.to(device)
 
     # physics_inner_criterion = PhysicsLossInnerImage()
-    physics_inner_criterion = PhysicsLossInnerImageAllenCahn()
-    physics_boundary_criterion = PhysicsLossImageBoundary()
+    physics_inner_criterion = PhysicsLossInnerImageAllenCahn(time_integrator=config['TRAIN']['LOSSES']['PHYSICS_LOSS']['TIME_INTEGRATOR'])
+    physics_boundary_criterion = PhysicsLossImageBoundary(boundary_type=config['TRAIN']['LOSSES']['PHYSICS_LOSS']['BOUNDARY_TYPE'])
 
     return pixel_criterion, content_criterion, adversarial_criterion, physics_inner_criterion, physics_boundary_criterion
 
