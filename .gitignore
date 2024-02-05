@@ -1,6 +1,9 @@
 OTHERS/
 tmp/
-data/
+
+data/*
+!data/.gitkeep
+
 samples/
 results/
 almost_unnecessary/

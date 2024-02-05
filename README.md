@@ -1,5 +1,5 @@
 # Important details on running the code
-- The dataset is not included in the repository. It should be stored as follows:
+1. The dataset is not included in the repository. It should be stored as follows:
 ```
 data
 ├── RDA
@@ -15,19 +15,19 @@ data
 │   ├── test
 ...
 ```
-- Download necessary pretrained SRGAN weight because we bootstrap the generator model from it.
+2. Download necessary pretrained SRGAN weight because we bootstrap the generator model from it.
 ```bash
 bash src/SRGAN_download_weights.sh SRGAN_x8-SRGAN_ImageNet
 ```
-- Install necessary packages mentioned in `requirements.txt`
-- Check and configure configuration files at `configs/train/*.yaml`
+3. Install necessary packages mentioned in `requirements.txt`
+4. Check and configure configuration files at `configs/train/*.yaml`
 
-- Train
+5. Train
 ```bash
 ./train_physics.sh
 ./train_no-physics.sh
 ```
-- Test
+6. Test
 ```bash
 ./test_physics.sh
 ./test_no-physics.sh
