@@ -9,7 +9,7 @@ SEED: 0
 # super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 2
+DEVICE_ID: 0
 
 # default: inductor, which may be better, but it is not supported by the P100 GPU in Bracewell
 BACKEND: eager
@@ -53,8 +53,8 @@ TRAIN:
     PRETRAINED_D_MODEL: ""
     # RESUMED_G_MODEL: ""
     # RESUMED_D_MODEL: ""
-    RESUMED_G_MODEL: ./samples/RDA_no_physics/g_epoch_26.pth.tar
-    RESUMED_D_MODEL: ./samples/RDA_no_physics/d_epoch_26.pth.tar
+    RESUMED_G_MODEL: ./samples/RDA_no_physics/g_epoch_71.pth.tar
+    RESUMED_D_MODEL: ./samples/RDA_no_physics/d_epoch_71.pth.tar
 
   # training hyperparameters
   HYP:
@@ -99,7 +99,9 @@ TRAIN:
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
       INNER_WEIGHT: [ 0 ]
+      TIME_INTEGRATOR: BDF # doesn't matter as the weight is 0
       BOUNDARY_WEIGHT: [ 0 ]
+      BOUNDARY_TYPE: Periodic # doesn't matter as the weight is 0
 
   PRINT_PER_BATCH: False
   PRINT_BATCH_FREQ: 100

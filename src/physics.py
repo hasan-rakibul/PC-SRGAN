@@ -218,13 +218,13 @@ class PhysicsLossInnerImageAllenCahn(nn.Module):
         elif self.time_integrator == 'CN':
             # Crank-Nicolson Time integrator
             losses = (
-                self.delta_t * (sr_tensor_wo_bd - gt_tensor_prev_wo_bd)
+               1/self.delta_t * (sr_tensor_wo_bd - gt_tensor_prev_wo_bd)
                 +1/2*( self._calculate_spatial_operators(eps, K, b1, b2, sr_tensor, theta) + self._calculate_spatial_operators(eps, K, b1, b2, gt_tensor_prev, theta))
             )
         elif self.time_integrator == 'EE':
             # Euler Explicit Time integrator
             losses = (
-                self.delta_t * (sr_tensor_wo_bd - gt_tensor_prev_wo_bd)
+                1/self.delta_t * (sr_tensor_wo_bd - gt_tensor_prev_wo_bd)
                 + self._calculate_spatial_operators(eps, K, b1, b2, gt_tensor_prev, theta) 
             )
         

@@ -3,13 +3,13 @@
 
 
 # experiment name
-EXP_NAME: RDA_inner_1e-8_boundary_5_EE
+EXP_NAME: RDA_inner_1e-8_boundary_5_BDF
 # random number seed
 SEED: 0
 # super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 1
+DEVICE_ID: 0
 
 # default: inductor, which may be better, but it is not supported by the P100 GPU in Bracewell
 BACKEND: eager
@@ -51,10 +51,10 @@ TRAIN:
     # PRETRAINED_G_MODEL: ./results/pretrained_models/SRResNet_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
-    RESUMED_G_MODEL: ""
-    RESUMED_D_MODEL: ""
-    # RESUMED_G_MODEL: ./samples/RDA_inner_1e-8_boundary_5_BDF/g_epoch_.pth.tar
-    # RESUMED_D_MODEL: ./samples/RDA_inner_1e-8_boundary_5_BDF/d_epoch_.pth.tar
+    # RESUMED_G_MODEL: ""
+    # RESUMED_D_MODEL: ""
+    RESUMED_G_MODEL: ./samples/RDA_inner_1e-8_boundary_5_BDF/g_epoch_62.pth.tar
+    RESUMED_D_MODEL: ./samples/RDA_inner_1e-8_boundary_5_BDF/d_epoch_62.pth.tar
 
   # training hyperparameters
   HYP:
@@ -98,7 +98,7 @@ TRAIN:
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
       INNER_WEIGHT: [ 0.00000001 ]
-      TIME_INTEGRATOR: EE #Options: BDF, CN, EE
+      TIME_INTEGRATOR: BDF #Options: BDF, CN, EE
       BOUNDARY_WEIGHT: [ 5 ]
       BOUNDARY_TYPE: Periodic #Options: Dirichlet, Periodic, Neumann
 
