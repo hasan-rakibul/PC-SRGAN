@@ -3,21 +3,16 @@ import shutil
 from natsort import natsorted
 import random
 
-def main():
-    ############################################
+def split_and_move(src_mesh7, src_mesh63, dst, dst_ratio=0.10, dst_split_ratio=0.05):
+    """Split the dataset into validation/test sets and move them to the corresponding directories
+    dst: validation or test, used to create the destination directory"""
 
-    src_mesh7 = './data/RDA/train/mesh_7'
-    src_mesh63 = './data/RDA/train/mesh_63'
+    assert 0 < dst_ratio < 1, 'dst_ratio should be between 0 and 1'
+    assert 0 < dst_split_ratio < 1, 'dst_split_ratio should be between 0 and 1'
+    assert 'train' in src_mesh7.split('/') and 'train' in src_mesh63.split('/'), 'the source directories should contain "train" in their path'
 
-    dst_mesh7 = './data/RDA/test/mesh_7'
-    dst_mesh63 = './data/RDA/test/mesh_63'
-
-    # choose x% of the data for testing/validation
-    dst_ratio = 0.10
-    # move the last half of the x% of remaining folders to the test directory
-    dst_split_ratio = 0.05
-
-    #############################################
+    dst_mesh7 = src_mesh7.replace('train', dst)
+    dst_mesh63 = src_mesh63.replace('train', dst)
 
     if os.path.exists(dst_mesh7) or os.path.exists(dst_mesh63):
         print('Test/validation directories already exist. Exiting...')
@@ -79,6 +74,20 @@ def main():
                 print('\tCreated directory: ', dst_path_63)
             shutil.move(src_file, dst_file)
             print('\tMoved file (mesh_63): ', file)
+
+def main():
+    ############################################
+
+    src_mesh7 = './data/Erikson_Johnson/train/mesh_7'
+    src_mesh63 = './data/Erikson_Johnson/train/mesh_63'
+
+    # choose x% of the data for testing/validation
+    dst_ratio = 0.10
+    # move the last half of the x% of remaining folders to the test directory
+    dst_split_ratio = 0.05
+
+    split_and_move(src_mesh7, src_mesh63, "validation", dst_ratio, dst_split_ratio)
+    split_and_move(src_mesh7, src_mesh63, "test", dst_ratio, dst_split_ratio)
 
 if __name__ == '__main__':
     main()

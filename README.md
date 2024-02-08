@@ -15,6 +15,11 @@ data
 │   ├── test
 ...
 ```
+**Data processing steps (not required if you already have npy files with train/validation/test split):**<br>
+Step 1. Generate the dataset using FEM<br>
+Step 2. Convert the generated vtk files to numpy files using `src/vtk-to-npy.py`<br>
+Step 3. Split the dataset into train, validation, and test sets using `src/split_dataset.py`<br>
+
 2. Download necessary pretrained SRGAN weight because we bootstrap the generator model from it.
 ```bash
 bash src/SRGAN_download_weights.sh SRGAN_x8-SRGAN_ImageNet
@@ -33,7 +38,7 @@ bash src/SRGAN_download_weights.sh SRGAN_x8-SRGAN_ImageNet
 ./test_no-physics.sh
 ```
 
-# Guides on setting up environment
+# Guides on setting up and using environment
 ## Creating python virtual environment
 Inside your preferred directory (e.g.,`/scratch2/<ident>`):
 ```bash
@@ -49,6 +54,16 @@ Or, if you don't need the environment everytime. You can activate in each termin
 To deactivate the current environment:
 ```bash
 deactivate
+```
+
+## Working on Bracewell
+- Useful commands for working on Bracewell using SLURM
+```bash
+salloc --nodes=1 --cpus-per-task=16 --mem=8GB --gres=gpu:1 --time=6:00:00 --account=OD-22471 #Getting some allocation for interactive session
+ssh <ident>@<node> # to connect to the allocated node
+sacct # to see the job history of the user for today
+sacct --starttime MMDD # MMDD is the month and day from which you want to see the job history
+seff <jobid> # to see the efficiency of resource utilisation for the job
 ```
 
 ## FeniCS _(only required for generating the dataset)_
@@ -168,9 +183,9 @@ python -m pip install -r requirements-Bao22.txt
 - Configure VSCode: [https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell](https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell)
 - Configure Conda: [https://confluence.csiro.au/display/IMT/Conda+and+python+in+HPC](https://confluence.csiro.au/display/IMT/Conda+and+python+in+HPC)
 
-### Submitting batch job
+### Submitting SLURM job
 - [https://confluence.csiro.au/display/SC/Sample+Slurm+Job+Scripts](https://confluence.csiro.au/display/SC/Sample+Slurm+Job+Scripts)
-- [https://confluence.csiro.au/pages/viewpage.action?pageId=1540489611](https://confluence.csiro.au/pages/viewpage.action?pageId=1540489611)
+- [PBS to SLURM](https://confluence.csiro.au/pages/viewpage.action?pageId=1540489611)
 - [https://confluence.csiro.au/display/VCCRI/SLURM](https://confluence.csiro.au/display/VCCRI/SLURM)
 - [https://confluence.csiro.au/display/SC/Requesting+resources+in+Slurm](https://confluence.csiro.au/display/SC/Requesting+resources+in+Slurm)
 - [https://confluence.csiro.au/display/SC/Running+jobs+in+an+interactive+batch+shell](https://confluence.csiro.au/display/SC/Running+jobs+in+an+interactive+batch+shell)

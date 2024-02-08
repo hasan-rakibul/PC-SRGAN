@@ -23,7 +23,7 @@ from torchvision.models.feature_extraction import create_feature_extractor
 
 __all__ = [
     "DiscriminatorForVGG", "SRResNet",
-    "discriminator_for_vgg", "srresnet_x2", "srresnet_x4", "srresnet_x8",
+    "discriminator_for_vgg", "srresnet_x2", "srresnet_x4", "srresnet_x8", "srresnet_x8_erikson_johnson"
 ]
 
 feature_extractor_net_cfgs: Dict[str, List[Union[str, int]]] = {
@@ -107,11 +107,11 @@ class _FeatureExtractor(nn.Module):
 class SRResNet(nn.Module):
     def __init__(
             self,
-            in_channels: int = 3,
-            out_channels: int = 3,
+            in_channels: int = 1,
+            out_channels: int = 1,
             channels: int = 64,
             num_rcb: int = 16,
-            upscale: int = 4,
+            upscale: int = 8,
             freeze: bool = False,
     ) -> None:
         super(SRResNet, self).__init__()
@@ -174,11 +174,37 @@ class SRResNet(nn.Module):
         x = self.conv3(x)
 
         # x = torch.clamp_(x, 0.0, 1.0)
+        
+        # Allen Cahn solution
         eps = 1e-2
         x = torch.clamp(x, -1.0+eps, 1.0-eps)
 
         return x
 
+class SRResNetEriksonJohnson(SRResNet):
+    def __init__(
+            self,
+            in_channels: int = 1,
+            out_channels: int = 1,
+            channels: int = 64,
+            num_rcb: int = 16,
+            upscale: int = 8,
+            freeze: bool = False,
+    ) -> None:
+        super().__init__(in_channels, out_channels, channels, num_rcb, upscale, freeze)
+
+    def _forward_impl(self, x: Tensor) -> Tensor:
+        conv1 = self.conv1(x)
+        x = self.trunk(conv1)
+        x = self.conv2(x)
+        x = torch.add(x, conv1)
+        x = self.upsampling(x) # low resolution to high resolution
+        x = self.conv3(x)
+        
+        # Erikson Johnson solution
+        x = torch.clamp(x, 0.0, 2.0)
+
+        return x
 
 class DiscriminatorForVGG(nn.Module):
     def __init__(
@@ -370,6 +396,11 @@ def srresnet_x4(**kwargs: Any) -> SRResNet:
 
 def srresnet_x8(**kwargs: Any) -> SRResNet:
     model = SRResNet(upscale=8, **kwargs)
+
+    return model
+
+def srresnet_x8_erikson_johnson(**kwargs: Any) -> SRResNetEriksonJohnson:
+    model = SRResNetEriksonJohnson(upscale=8, **kwargs)
 
     return model
 

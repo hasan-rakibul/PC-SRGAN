@@ -241,7 +241,6 @@ class PhysicsLossInnerImageAllenCahn(nn.Module):
         # contributed by Pouria Behnoudfar
         spatial_op = (
             - eps * img_lap
-            # + b1 * img_dx + b2 * img_dy
             + K*self._nonlinear(phi=img, Theta_=theta)
         )
         # print(F_torch.mse_loss(spatial_op, torch.zeros_like(spatial_op).to(self.device)))
@@ -275,7 +274,30 @@ class PhysicsLossInnerImageAllenCahn(nn.Module):
         return dF
     
 
-class H1Error(PhysicsLossInnerImage):
+class PhysicsLossInnerImageEriksonJohnson(PhysicsLossInnerImageAllenCahn):
+    """Constructs a physics-based loss function for the boundary of the image for Erickson-Johnson data.
+     """
+    def __init__(self, time_integrator: str = 'BDF') -> None:
+        super().__init__(time_integrator)
+        self.delta_t = 0.005 # comes from FEM
+    
+    def _calculate_spatial_operators(self, eps: Tensor, K: Tensor, b1:Tensor, b2:Tensor, img: Tensor, theta: Tensor) -> Tensor:
+        img_dx, img_dy = calculate_image_derivative(img)
+        img_lap = calculate_image_laplacian(img)
+
+        img = remove_boundary(img)
+
+        # contributed by Pouria Behnoudfar
+        spatial_op = (
+            - eps * img_lap
+            + b1 * img_dx + b2 * img_dy
+            + K*img*(img-1)
+        )
+
+        return spatial_op
+    
+
+class H1Error(nn.Module):
     '''Calculate H1 error between two images
     '''
     def __init__(self) -> None:

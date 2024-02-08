@@ -2,15 +2,15 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: physics_actual_test
+EXP_NAME: Allen_Cahn_Periodic_EE_physics_ACTUAL_TEST_SET
 # random number seed
 SEED: 0
 # Super resolution magnification factor
 SCALE: 8
 # run device model
-DEVICE_ID: 2
+DEVICE_ID: 0
 # Model weights path
-MODEL_WEIGHTS_PATH: ./results/RDA_inner_1e-8_boundary_5/g_best.pth.tar
+MODEL_WEIGHTS_PATH: ./results/Allen_Cahn_Periodic_physics_EE/g_best.pth.tar
 
 # Model define
 MODEL:
@@ -24,8 +24,8 @@ MODEL:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/RDA/test/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/RDA/test/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen_Cahn_Periodic/test/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen_Cahn_Periodic/test/mesh_7
     HAS_SUBFOLDER: True
 
   # Test hyperparameters

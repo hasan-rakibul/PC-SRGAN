@@ -3,7 +3,10 @@
 
 
 # experiment name
-EXP_NAME: RDA_inner_1e-8_boundary_5_BDF
+EXP_NAME: Erikson-Johnson_No-Physics
+
+ERIKSON_JOHNSON: True #doesn't matter as it is used to choose physics loss
+
 # random number seed
 SEED: 0
 # super resolution magnification factor
@@ -23,7 +26,7 @@ MODEL:
     DECAY: 0.999
     COMPILED: True
   G:
-    NAME: srresnet_x8
+    NAME: srresnet_x8_erikson_johnson
     IN_CHANNELS: 1
     OUT_CHANNELS: 1
     CHANNELS: 64
@@ -40,25 +43,26 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/RDA/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/RDA/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Erikson_Johnson/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/Erikson_Johnson/train/mesh_7
     GT_IMAGE_SIZE: 64
     HAS_SUBFOLDER: True
-    INDEX_VAL_MAPPING: ./data/RDA/index-val-mapping.csv
+    INDEX_VAL_MAPPING: ./data/Erikson_Johnson/index-val-mapping.csv
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
     # PRETRAINED_G_MODEL: ./results/pretrained_models/SRResNet_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
-    # RESUMED_G_MODEL: ""
-    # RESUMED_D_MODEL: ""
-    RESUMED_G_MODEL: ./samples/RDA_inner_1e-8_boundary_5_BDF/g_epoch_62.pth.tar
-    RESUMED_D_MODEL: ./samples/RDA_inner_1e-8_boundary_5_BDF/d_epoch_62.pth.tar
+    RESUMED_G_MODEL: ""
+    RESUMED_D_MODEL: ""
+    # RESUMED_G_MODEL: ./samples/Erikson_Johnson/g_epoch_71.pth.tar
+    # RESUMED_D_MODEL: ./samples/Erikson_Johnson/d_epoch_71.pth.tar
 
   # training hyperparameters
   HYP:
     EPOCHS: 100
+
     IMGS_PER_BATCH: 16
     SHUFFLE: True
     NUM_WORKERS: 4
@@ -67,7 +71,7 @@ TRAIN:
 
   OPTIM:
     NAME: Adam
-    LR: 0.001
+    LR: 0.0001
     BETAS: [ 0.9, 0.999 ]
     EPS: 0.0001
     WEIGHT_DECAY: 0.0
@@ -97,23 +101,23 @@ TRAIN:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
-      INNER_WEIGHT: [ 0.00000001 ]
-      TIME_INTEGRATOR: BDF #Options: BDF, CN, EE
-      BOUNDARY_WEIGHT: [ 5 ]
-      BOUNDARY_TYPE: Periodic #Options: Dirichlet, Periodic, Neumann
+      INNER_WEIGHT: [ 0 ]
+      TIME_INTEGRATOR: BDF # doesn't matter as the weight is 0
+      BOUNDARY_WEIGHT: [ 0 ]
+      BOUNDARY_TYPE: Periodic # doesn't matter as the weight is 0
 
   PRINT_PER_BATCH: False
   PRINT_BATCH_FREQ: 100
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/RDA/validation/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/RDA/validation/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Erikson_Johnson/validation/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Erikson_Johnson/validation/mesh_7
     HAS_SUBFOLDER: True
 
   # Test hyperparameters
   HYP:
-    IMGS_PER_BATCH: 1
+    IMGS_PER_BATCH: 1 # should be always 1 as the metrics can't handle batched data
     SHUFFLE: False
     NUM_WORKERS: 1
     PIN_MEMORY: True
@@ -121,6 +125,6 @@ TEST:
 
   # SAVE_IMAGE_DIR: ./results/validation/
   SAVE_IMAGE_DIR: ""
-  
+
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""

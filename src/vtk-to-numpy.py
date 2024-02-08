@@ -7,7 +7,7 @@ from natsort import natsorted
 def main():
     '''Convert vtk files to numpy image arrays and save them'''
 
-    data_dir = 'data/RDA/'
+    data_dir = 'data/Erikson_Johnson/'
     vtk_dir = os.path.join(data_dir, 'raw_vtk/')
     if not os.path.exists(data_dir):
         print('Directory does not exist')

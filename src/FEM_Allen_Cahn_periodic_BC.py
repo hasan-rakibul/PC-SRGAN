@@ -1,4 +1,4 @@
-# This source file is primarily taken from Pouria Behnoudfar and later modified by Rakibul Hasan
+# This source file is mostly developed by Pouria Behnoudfar
 
 from fenics import *
 from dolfin import *

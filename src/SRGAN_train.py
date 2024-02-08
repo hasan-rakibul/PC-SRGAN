@@ -29,7 +29,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import SRGAN_model
-from physics import PhysicsLossImageBoundary, PhysicsLossInnerImageAllenCahn, H1Error
+from physics import PhysicsLossImageBoundary, PhysicsLossInnerImageAllenCahn, PhysicsLossInnerImageEriksonJohnson, H1Error
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset, FEMPhyDataset
 # from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
 from SRGAN_test import test
@@ -339,8 +339,13 @@ def define_loss(config: Any, device: torch.device) -> [nn.MSELoss, SRGAN_model.C
     content_criterion = content_criterion.to(device)
     adversarial_criterion = adversarial_criterion.to(device)
 
-    # physics_inner_criterion = PhysicsLossInnerImage()
-    physics_inner_criterion = PhysicsLossInnerImageAllenCahn(time_integrator=config['TRAIN']['LOSSES']['PHYSICS_LOSS']['TIME_INTEGRATOR'])
+    if config["ERIKSON_JOHNSON"]:
+        print("\nUsing PhysicsLossInnerImageEriksonJohnson\n")
+        physics_inner_criterion = PhysicsLossInnerImageEriksonJohnson(time_integrator=config['TRAIN']['LOSSES']['PHYSICS_LOSS']['TIME_INTEGRATOR'])
+    else:
+        print("\nUsing PhysicsLossInnerImageAllenCahn\n")
+        physics_inner_criterion = PhysicsLossInnerImageAllenCahn(time_integrator=config['TRAIN']['LOSSES']['PHYSICS_LOSS']['TIME_INTEGRATOR'])
+    
     physics_boundary_criterion = PhysicsLossImageBoundary(boundary_type=config['TRAIN']['LOSSES']['PHYSICS_LOSS']['BOUNDARY_TYPE'])
 
     return pixel_criterion, content_criterion, adversarial_criterion, physics_inner_criterion, physics_boundary_criterion
