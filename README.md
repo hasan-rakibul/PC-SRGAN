@@ -59,7 +59,8 @@ deactivate
 ## Working on Bracewell
 - Useful commands for working on Bracewell using SLURM
 ```bash
-salloc --nodes=1 --cpus-per-task=16 --mem=8GB --gres=gpu:1 --time=6:00:00 --account=OD-22471 #Getting some allocation for interactive session
+sbatch <script.sh> # to submit a job
+salloc --nodes=1 --cpus-per-task=16 --mem=8GB --gres=gpu:1 --time=6:00:00 --account=OD-224713 # get some allocation for interactive session
 ssh <ident>@<node> # to connect to the allocated node
 sacct # to see the job history of the user for today
 sacct --starttime MMDD # MMDD is the month and day from which you want to see the job history

@@ -78,8 +78,8 @@ def split_and_move(src_mesh7, src_mesh63, dst, dst_ratio=0.10, dst_split_ratio=0
 def main():
     ############################################
 
-    src_mesh7 = './data/Erikson_Johnson/train/mesh_7'
-    src_mesh63 = './data/Erikson_Johnson/train/mesh_63'
+    src_mesh7 = './data/Allen-Cahn_Neumann/train/mesh_7'
+    src_mesh63 = './data/Allen-Cahn_Neumann/train/mesh_63'
 
     # choose x% of the data for testing/validation
     dst_ratio = 0.10

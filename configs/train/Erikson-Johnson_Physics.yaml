@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Erikson-Johnson_Physics
+EXP_NAME: Erikson-Johnson_Physics_larger_weights
 
 # if using Erikson_Johnson dataset, set to True
 ERIKSON_JOHNSON: True
@@ -100,10 +100,9 @@ TRAIN:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
-      # INNER_WEIGHT: [ 0.00000001 ] # Alleh-Cahn
-      INNER_WEIGHT: [ 0.00005 ] # Erickson-Johnson
+      INNER_WEIGHT: [ 0.0005 ] #*100
       TIME_INTEGRATOR: BDF #Options: BDF, CN, EE
-      BOUNDARY_WEIGHT: [ 5 ]
+      BOUNDARY_WEIGHT: [ 500 ] #*100
       BOUNDARY_TYPE: Dirichlet #Options: Dirichlet, Periodic, Neumann
 
   PRINT_PER_BATCH: False
@@ -123,8 +122,8 @@ TEST:
     PIN_MEMORY: True
     PERSISTENT_WORKERS: True
 
-  # SAVE_IMAGE_DIR: ./results/validation/
-  SAVE_IMAGE_DIR: ""
+  SAVE_IMAGE_DIR: ./results/validation/
+  # SAVE_IMAGE_DIR: ""
   
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""

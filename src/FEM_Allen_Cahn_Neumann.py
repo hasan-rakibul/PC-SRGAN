@@ -1,4 +1,4 @@
-# This source file is mostly developed by Pouria Behnoudfar
+# This source file is primarily taken from Pouria Behnoudfar and later modified by Rakibul Hasan
 
 from fenics import *
 from dolfin import *
@@ -44,14 +44,14 @@ def generate_data(eps, K, r, Theta_, elem_per_dim, save_as,u0_ref):
 
     ###### Problem's Parameters
     #
-    T =.001 # final time
+    T =.0015 # final time
     # Initial condition
 
 
 
         #######-------------------------------------------------------
     n_ele = elem_per_dim   # no. of elements
-    num_steps = 100    # number of time steps
+    num_steps = 150    # number of time steps
     dt = T / num_steps # time step size
     # Define expressions used in variational forms
     dt = Constant(dt)
@@ -117,7 +117,7 @@ def generate_data(eps, K, r, Theta_, elem_per_dim, save_as,u0_ref):
         - am/(dt*gamma*af)*u_n*s*dx - (am/gamma-1) *v_n*s*dx)
 
         # Solve variational problem for time step
-        solve(F == 0, u)
+        solve(F == 0, u , solver_parameters={"newton_solver":{"relative_tolerance":1e-6},"newton_solver":{"maximum_iterations":400}})
 
 
                                  # here we solve for u^{n+\alpha_f}
@@ -141,12 +141,12 @@ def main():
 
     ###### Problem's Parameters
 
-    eps_range = np.linspace(1e-0, 10, 4) # diffusion coefficient
+    eps_range = np.linspace(1e-0, 10, 10) # diffusion coefficient
     K_range = np.linspace(1, 4, 4) # reaction rate
 
 
     r_range = np.linspace(0, 0, 1)
-    theta_range = np.linspace(1, 1.1, 2)
+    theta_range = np.linspace(1, 1.05, 5)
 
 ## Random initial condition
     mesh_ref  = UnitSquareMesh(100,100)#RectangleMesh(Point(x1, y1), Point(x2, y2), 100,100)

@@ -7,7 +7,8 @@ from natsort import natsorted
 def main():
     '''Convert vtk files to numpy image arrays and save them'''
 
-    data_dir = 'data/Erikson_Johnson/'
+    data_dir = 'data/Allen-Cahn_Neumann/'
+
     vtk_dir = os.path.join(data_dir, 'raw_vtk/')
     if not os.path.exists(data_dir):
         print('Directory does not exist')
@@ -19,9 +20,9 @@ def main():
     for mesh in mesh_dir:
         
         # RESUME feature: skipping mesh_7
-        if mesh == 'mesh_7':
-            print('\t', mesh, 'skipped\n')
-            continue
+        # if mesh == 'mesh_7':
+        #     print('\t', mesh, 'skipped\n')
+        #     continue
         
         folders = os.listdir(os.path.join(vtk_dir, mesh))
         for index, folder in enumerate(folders):

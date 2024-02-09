@@ -20,6 +20,9 @@ def main():
 
                 image = np.load(os.path.join(root, file)).astype(np.float32)
 
+                # image becomes rotated when visualised in paraview, so we need to transpose it
+                image = np.ascontiguousarray(np.flip(image, axis = 0))
+
                 image_name = file.split(".")[0] + ".png" # cannot save as npy
                 
                 last_folder = os.path.join(*(root.split('/')[-2:])) # taking the last two folders

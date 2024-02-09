@@ -11,7 +11,6 @@ def save_as_vtk(data_np, target_dir):
     # image becomes rotated when visualized in paraview, so we need to transpose it
     data_np = np.transpose(data_np)
     data_np = np.ascontiguousarray(np.flip(data_np, axis = 1))
-    # import pdb; pdb.set_trace()
 
     # Taken from https://vtk.org/Wiki/VTK/Writing_VTK_files_using_python
     concentration = data_np.reshape((data_np.shape[0], data_np.shape[1], 1), order = 'C')

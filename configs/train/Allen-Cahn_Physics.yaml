@@ -101,11 +101,10 @@ TRAIN:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
-      # INNER_WEIGHT: [ 0.00000001 ] # Alleh-Cahn
-      INNER_WEIGHT: [ 0.00005 ] # Erickson-Johnson
+      INNER_WEIGHT: [ 0.00000001 ]
       TIME_INTEGRATOR: BDF #Options: BDF, CN, EE
       BOUNDARY_WEIGHT: [ 5 ]
-      BOUNDARY_TYPE: Dirichlet #Options: Dirichlet, Periodic, Neumann
+      BOUNDARY_TYPE: Periodic #Options: Dirichlet, Periodic, Neumann
 
   PRINT_PER_BATCH: False
   PRINT_BATCH_FREQ: 100
