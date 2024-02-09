@@ -294,8 +294,6 @@ class PhysicsLossInnerImageEriksonJohnson(PhysicsLossInnerImageAllenCahn):
             + K*img*(img-1)
         )
 
-        print('\nUsing Erikson-Johnson calculation for spatial operators\n')
-
         return spatial_op
     
 
