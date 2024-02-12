@@ -2,7 +2,7 @@
 1. The dataset is not included in the repository. It should be stored as follows:
 ```
 data
-├── RDA
+├── Allen-Cahn_Periodic
 │   ├── train
 │   │   ├── mesh_7
 │   │   │   ├── <folders per parameter set>
@@ -27,15 +27,19 @@ bash src/SRGAN_download_weights.sh SRGAN_x8-SRGAN_ImageNet
 3. Install necessary packages mentioned in `requirements.txt`
 4. Check and configure configuration files at `configs/train/*.yaml`
 
-5. Train
+5. Train and test scripts
+
+Directly run bash script:
 ```bash
 ./train_physics.sh
 ./train_no-physics.sh
-```
-6. Test
-```bash
 ./test_physics.sh
 ./test_no-physics.sh
+```
+Or, SLURM scripts if you need to submit a job:
+```bash
+sbatch job_physics.sh
+sbatch job_no-physics.sh
 ```
 
 # Guides on setting up and using environment

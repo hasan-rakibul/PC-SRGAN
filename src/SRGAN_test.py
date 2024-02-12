@@ -73,7 +73,7 @@ def test(
         h1_model,
         device: torch.device,
         config: Any,
-) -> [float, float]:
+) -> tuple[float, float, float, float]:
     save_image = False
     save_image_dir = ""
 
@@ -87,6 +87,11 @@ def test(
     if config["TEST"]["SAVE_IMAGE_DIFF_DIR"]:
         save_image_diff = True
         save_image_diff_dir = os.path.join(config["TEST"]["SAVE_IMAGE_DIFF_DIR"], config["EXP_NAME"])
+
+    is_validation = False
+    # checking if it is validation stage
+    if 'validation' in save_image_dir:
+        is_validation = True
 
     # Calculate the number of iterations per epoch
     batches = len(test_data_prefetcher)
@@ -168,7 +173,10 @@ def test(
                 
                 sr_np = sr.cpu().numpy().squeeze(0).squeeze(0)
 
-                np.save(os.path.join(save_dir, np_image_name), sr_np)
+                # not saving the image as npy during validation
+                if not is_validation:
+                    np.save(os.path.join(save_dir, np_image_name), sr_np)
+                
                 save_as_plot(sr_np, os.path.join(save_dir, image_name))
 
                 # sr_image = tensor_to_image(sr, range_norm=True, half=False) # range_norm=True means converting from [-1, 1] to [0, 1]
