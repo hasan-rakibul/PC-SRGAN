@@ -1,0 +1,44 @@
+# Collected from https://github.com/Lornatang/SRGAN-PyTorch
+# =========================================================
+
+# experiment name
+EXP_NAME: Erikson-Johnson_Physics_ACTUAL_TEST_SET
+# random number seed
+SEED: 0
+# Super resolution magnification factor
+SCALE: 8
+# run device model
+DEVICE_ID: 0
+# Model weights path
+MODEL_WEIGHTS_PATH: ./results/Erikson-Johnson_Physics/g_best.pth.tar
+
+# Model define
+MODEL:
+  G:
+    NAME: srresnet_x8
+    IN_CHANNELS: 1
+    OUT_CHANNELS: 1
+    CHANNELS: 64
+    NUM_RCB: 16
+    COMPILED: False
+
+TEST:
+  DATASET:
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Erikson_Johnson/test/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Erikson_Johnson/test/mesh_7
+    HAS_SUBFOLDER: True
+
+  # Test hyperparameters
+  HYP:
+    IMGS_PER_BATCH: 1 # should be always 1 as the metrics can't handle batched data
+    SHUFFLE: False
+    NUM_WORKERS: 1
+    PIN_MEMORY: True
+    PERSISTENT_WORKERS: True
+
+  SAVE_IMAGE_DIR: ./results/test/
+  # SAVE_IMAGE_DIR: ""
+
+  # saving the difference between the ground truth and the prediction
+  SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
+  # SAVE_IMAGE_DIFF_DIR: ""
