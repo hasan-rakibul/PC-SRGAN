@@ -24,7 +24,7 @@ Step 3. Split the dataset into train, validation, and test sets using `src/split
 ```bash
 bash src/SRGAN_download_weights.sh SRGAN_x8-SRGAN_ImageNet
 ```
-3. Install necessary packages mentioned in `requirements.txt`
+3. Install necessary packages mentioned in `requirements.txt` (Python version 3.9.4)
 4. Check and configure configuration files at `configs/train/*.yaml`
 
 5. Train and test scripts
@@ -43,36 +43,12 @@ sbatch job_no-physics.sh
 ```
 
 # Guides on setting up and using environment
+My note on using CSIRO Bracewell is [here](https://hasan-rakibul.github.io/csiro-bracewell-for-deep-learning.html).
 ## Creating python virtual environment
-Inside your preferred directory (e.g.,`/scratch2/<ident>`):
-```bash
-python -m venv .env/pinn/
-```
-Activate virtual environment. Keep the activation command in your `.bashrc` file:
-```bash
-source /scratch2/<ident>/.env/pinn/bin/activate
-```
-
-Or, if you don't need the environment everytime. You can activate in each terminal session using the same command above.
-
-To deactivate the current environment:
-```bash
-deactivate
-```
-
-## Working on Bracewell
-- Useful commands for working on Bracewell using SLURM
-```bash
-sbatch <script.sh> # to submit a job
-salloc --nodes=1 --cpus-per-task=16 --mem=8GB --gres=gpu:1 --time=6:00:00 --account=OD-224713 # get some allocation for interactive session
-ssh <ident>@<node> # to connect to the allocated node
-sacct # to see the job history of the user for today
-sacct --starttime MMDD # MMDD is the month and day from which you want to see the job history
-seff <jobid> # to see the efficiency of resource utilisation for the job
-```
+Inside your preferred directory (e.g.,`/scratch2/<ident>`), you can create a virtual environment (instructions can be found [here](https://hasan-rakibul.github.io/personal-note-git-linux-etc-commands.html)).
 
 ## FeniCS _(only required for generating the dataset)_
-pip install is so much pain; it needs to build from source because of the C++ dependencies. The failed attempt with pip at the end of this document.
+pip install was so much pain; it needs to build from source because of the C++ dependencies. The failed attempt with pip at the end of this document.
 
 Better to install using conda:
 ```bash
@@ -81,19 +57,6 @@ conda activate fenics
 conda install -c conda-forge fenics
 ```
 And it worked like a charm!
-
-In **CSIRO Bracewell**, I can have minoconda using `module load miniconda3`
-
-As I should not install in home directory, let's change them in conda configuration.
-
-`conda config` will create a `.condarc` file in home directory. Open it and add the following lines:
-```bash
-envs_dirs:
-  - /scratch2/<ident>/.conda/envs
-pkgs_dirs:
-  - /scratch2/<ident>/.conda/pkgs
-```
-Then install as above.
   
 ## CSIRO Bracewell
 Python version is **3.9.4**
@@ -101,32 +64,11 @@ Python version is **3.9.4**
 ```bash
 module load python/3.9.4
 ```
-Creat and activate a virtual environment (as described earlier).
+Creat and activate a virtual environment.
 
 Install packages:
 ```bash
-python -m pip install -r requirements-FEM.txt
-```
-
-## Local machine
-
-I first install python3.9 in Ubuntu 22.04.3 LTS  
-
-```bash
-sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt install python3.9 python3.9-venv python3.9-distutils
-```
-
-Create and activate virtual environment.
-```bash
-python3.9 -m venv ~/.venv/pinn
-source ~/.venv/pinn/bin/activate 
-```
-
-Install necessary files on the virtual environment 
-```bash
 python -m pip install -r requirements.txt
-python -m pip install -r requirements_FEM.txt 
 ```
 
 # Others' code/data _(not required for the final model)_
@@ -181,24 +123,7 @@ python -m pip install -r requirements-Bao22.txt
 - [https://wiki.pathmind.com/generative-adversarial-network-gan](https://wiki.pathmind.com/generative-adversarial-network-gan)
 - [PSNR and SSIM](https://towardsdatascience.com/super-resolution-a-basic-study-e01af1449e13)
 
-## CSIRO Cluster
-- [https://confluence.csiro.au/display/SC/Useful+information+for+new+users](https://confluence.csiro.au/display/SC/Useful+information+for+new+users)
-- [https://confluence.csiro.au/display/~mac581/Oddities+of+our+HPC](https://confluence.csiro.au/display/~mac581/Oddities+of+our+HPC)
-- [https://confluence.csiro.au/display/SC/Interactive+access+and+visualization](https://confluence.csiro.au/display/SC/Interactive+access+and+visualization)
-- Configure VSCode: [https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell](https://confluence.csiro.au/display/MLAIFSP/Remote+editing+with+VS+Code+on+bracewell)
-- Configure Conda: [https://confluence.csiro.au/display/IMT/Conda+and+python+in+HPC](https://confluence.csiro.au/display/IMT/Conda+and+python+in+HPC)
-
-### Submitting SLURM job
-- [https://confluence.csiro.au/display/SC/Sample+Slurm+Job+Scripts](https://confluence.csiro.au/display/SC/Sample+Slurm+Job+Scripts)
-- [PBS to SLURM](https://confluence.csiro.au/pages/viewpage.action?pageId=1540489611)
-- [https://confluence.csiro.au/display/VCCRI/SLURM](https://confluence.csiro.au/display/VCCRI/SLURM)
-- [https://confluence.csiro.au/display/SC/Requesting+resources+in+Slurm](https://confluence.csiro.au/display/SC/Requesting+resources+in+Slurm)
-- [https://confluence.csiro.au/display/SC/Running+jobs+in+an+interactive+batch+shell](https://confluence.csiro.au/display/SC/Running+jobs+in+an+interactive+batch+shell)
-- [https://confluence.csiro.au/display/GEES/HPC+Cheat+Sheet](https://confluence.csiro.au/display/GEES/HPC+Cheat+Sheet)
-
 # Notes
-## Freezing layers
-In addition to controlling `param.requires_grad`, I need to enable `eval()` mode corresponding to `batchnorm layers`, if any. Details: [https://discuss.pytorch.org/t/should-i-use-model-eval-when-i-freeze-batchnorm-layers-to-finetune/39495](https://discuss.pytorch.org/t/should-i-use-model-eval-when-i-freeze-batchnorm-layers-to-finetune/39495)
 
 # Failed attempt to install FeniCS using pip
 Taken and adapted from [https://fenics.readthedocs.io/en/latest/installation.html](https://fenics.readthedocs.io/en/latest/installation.html)
