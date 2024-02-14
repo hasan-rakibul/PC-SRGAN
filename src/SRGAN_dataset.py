@@ -71,7 +71,7 @@ class PairedImageDataset(Dataset):
         
         self.in_channels = in_channels
 
-    def __getitem__(self, batch_index: int) -> [Tensor, Tensor, str]:
+    def __getitem__(self, batch_index: int) -> tuple[Tensor, Tensor, str]:
         # Read a batch of image data
         gt_tensor = numpy_to_compatible_tensor(self.paired_gt_image_file_names[batch_index], self.in_channels)
         lr_tensor = numpy_to_compatible_tensor(self.paired_lr_image_file_names[batch_index], self.in_channels)
@@ -252,7 +252,7 @@ class FEMPhyDataset(Dataset):
     def __getitem__(
             self,
             batch_index: int
-    ) -> [Tensor, Tensor, Tensor, Tensor, float, float, float, float]:
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, float, float, float, float]:
 
         # Read parameters
         param_name = self.gt_image_file_names[batch_index].split('/')[-2:-1][0] # get the name of the folder (parameter name)
