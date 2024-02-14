@@ -1,13 +1,12 @@
 import torch
 from torch import nn, Tensor
 from torch.nn import functional as F_torch
-from functools import reduce
 
-def calculate_image_derivative(img: Tensor) -> [Tensor, Tensor]:        
+def calculate_image_derivative(img: Tensor) -> tuple[Tensor, Tensor]:        
     # Filter kernels
     k = Tensor([1., 3.5887, 1.]) # or [3., 10., 3.] or [17., 61., 17.]
     d = Tensor([1., 0., -1.])
-    gy = torch.outer(k, d)
+    gy = torch.outer(k, d).type(img.dtype)
     gx = gy.transpose(0, 1)
 
     coeff = - 5.645298778954285 # empirically found through comparing with analytical solutions
@@ -22,7 +21,7 @@ def calculate_image_laplacian(img: Tensor) -> Tensor:
     # Filter kernel
     g = torch.Tensor([[0., 1., 0.],
                     [1., 4., 1.],
-                    [0., 1., 0.]])
+                    [0., 1., 0.]]).type(img.dtype)
 
     coeff = - 9.880939350316519 # empirically found through comparing with analytical solutions
     
@@ -259,7 +258,7 @@ class PhysicsLossInnerImageAllenCahn(nn.Module):
 
     def _nonlinear(self, phi, Theta_):
         # contributed by Pouria Behnoudfar
-        Eps = (1/64)/(2*(2**0.5)*torch.arctanh(torch.Tensor([0.9]))) # is 64 fixed or related to any things?
+        Eps = (1/64)/(2*(2**0.5)*torch.arctanh(torch.Tensor([0.9])))
         Eps = Eps.to(self.device)
         Theta_c = 1.2
        

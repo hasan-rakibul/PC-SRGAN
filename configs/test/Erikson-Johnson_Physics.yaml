@@ -30,7 +30,7 @@ TEST:
 
   # Test hyperparameters
   HYP:
-    IMGS_PER_BATCH: 1 # should be always 1 as the metrics can't handle batched data
+    IMGS_PER_BATCH: 1
     SHUFFLE: False
     NUM_WORKERS: 1
     PIN_MEMORY: True
