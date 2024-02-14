@@ -1,7 +1,7 @@
 #!/bin/bash
  
 #SBATCH --job-name=Test-NoPHY
-#SBATCH --time=4:00:00
+#SBATCH --time=2:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=2GB
@@ -11,5 +11,5 @@
 source /scratch2/has118/.env/pinn/bin/activate
 
 # bash /scratch2/has118/physics-nn-fluid-dynamics/test_no-physics.sh Allen-Cahn_Periodic
-# bash /scratch2/has118/physics-nn-fluid-dynamics/test_no-physics.sh Allen-Cahn_Neumann
-bash /scratch2/has118/physics-nn-fluid-dynamics/test_no-physics.sh Erikson-Johnson
+bash /scratch2/has118/physics-nn-fluid-dynamics/test_no-physics.sh Allen-Cahn_Neumann
+# bash /scratch2/has118/physics-nn-fluid-dynamics/test_no-physics.sh Erikson-Johnson

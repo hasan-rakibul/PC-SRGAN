@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen_Cahn_Neumann_No-Physics_ACTUAL_TEST_SET
+EXP_NAME: Allen-Cahn_Neumann_No-Physics_ACTUAL_TEST_SET
 # random number seed
 SEED: 0
 # Super resolution magnification factor
@@ -24,8 +24,8 @@ MODEL:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen_Cahn_Neumann/test/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen_Cahn_Neumann/test/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Neumann/test/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Neumann/test/mesh_7
     HAS_SUBFOLDER: True
 
   # Test hyperparameters

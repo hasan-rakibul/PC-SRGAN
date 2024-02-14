@@ -16,3 +16,4 @@ elif [[ $option = Erikson-Johnson ]]; then
 --config_path ./configs/test/Erikson-Johnson_Physics.yaml >&1 | tee ./bash_logs/Erikson-Johnson_Physics_Test_$(date +%y%m%d-%H%M).txt
 else
     echo "No supported option $1. Check the argument."
+fi
