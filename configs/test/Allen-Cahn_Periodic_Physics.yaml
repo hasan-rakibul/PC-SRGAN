@@ -30,7 +30,7 @@ TEST:
 
   # Test hyperparameters
   HYP:
-    IMGS_PER_BATCH: 1
+    IMGS_PER_BATCH: 1 # must be 1 as the test code is not written to save more than 1 image per batch
     SHUFFLE: False
     NUM_WORKERS: 1
     PIN_MEMORY: True
