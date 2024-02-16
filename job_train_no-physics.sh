@@ -10,6 +10,6 @@
 
 source /scratch2/has118/.env/pinn/bin/activate
 
-# bash /scratch2/has118/physics-nn-fluid-dynamics/train_no-physics.sh Allen-Cahn_Periodic
-bash /scratch2/has118/physics-nn-fluid-dynamics/train_no-physics.sh Allen-Cahn_Neumann
+bash /scratch2/has118/physics-nn-fluid-dynamics/train_no-physics.sh Allen-Cahn_Periodic
+# bash /scratch2/has118/physics-nn-fluid-dynamics/train_no-physics.sh Allen-Cahn_Neumann
 # bash /scratch2/has118/physics-nn-fluid-dynamics/train_no-physics.sh Erikson-Johnson

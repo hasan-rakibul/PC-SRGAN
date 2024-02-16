@@ -1,9 +1,8 @@
 # Collected from https://github.com/Lornatang/SRGAN-PyTorch
 # =========================================================
 
-
 # experiment name
-EXP_NAME: Allen-Cahn_Physics
+EXP_NAME: Allen-Cahn_Periodic_Physics_Subset80
 
 # if using Erikson_Johnson dataset, set to True
 ERIKSON_JOHNSON: False
@@ -44,21 +43,22 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/Allen_Cahn_Periodic/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/Allen_Cahn_Periodic/train/mesh_7
+    # TRAIN_GT_IMAGES_DIR: ./data/Allen_Cahn_Periodic/train/mesh_63
+    # TRAIN_LR_IMAGES_DIR: ./data/Allen_Cahn_Periodic/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Allen_Cahn_Periodic/Subset80/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/Allen_Cahn_Periodic/Subset80/train/mesh_7
     GT_IMAGE_SIZE: 64
     HAS_SUBFOLDER: True
     INDEX_VAL_MAPPING: ./data/Allen_Cahn_Periodic/index-val-mapping.csv
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
-    # PRETRAINED_G_MODEL: ./results/pretrained_models/SRResNet_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
-    # RESUMED_G_MODEL: ""
-    # RESUMED_D_MODEL: ""
-    RESUMED_G_MODEL: ./samples/Allen_Cahn_Periodic_Physics/g_epoch_16.pth.tar
-    RESUMED_D_MODEL: ./samples/Allen_Cahn_Periodic_Physics/d_epoch_16.pth.tar
+    RESUMED_G_MODEL: ""
+    RESUMED_D_MODEL: ""
+    # RESUMED_G_MODEL: ./samples/Allen_Cahn_Periodic_Physics/g_epoch_16.pth.tar
+    # RESUMED_D_MODEL: ./samples/Allen_Cahn_Periodic_Physics/d_epoch_16.pth.tar
 
   # training hyperparameters
   HYP:
@@ -102,9 +102,9 @@ TRAIN:
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
       INNER_WEIGHT: [ 0.00000001 ]
-      TIME_INTEGRATOR: BDF #Options: BDF, CN, EE
+      TIME_INTEGRATOR: BDF # Options: BDF, CN, EE
       BOUNDARY_WEIGHT: [ 5 ]
-      BOUNDARY_TYPE: Periodic #Options: Dirichlet, Periodic, Neumann
+      BOUNDARY_TYPE: Periodic # Options: Dirichlet, Periodic, Neumann
 
   PRINT_PER_BATCH: False
   PRINT_BATCH_FREQ: 100

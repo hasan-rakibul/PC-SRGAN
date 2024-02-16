@@ -2,12 +2,21 @@ import os
 import shutil
 from natsort import natsorted
 import random
+import argparse
 
-def copy_to_subset(src_mesh7, src_mesh63, src_dir_name, dst_dir_name, dst_ratio=0.80):
+def copy_to_subset(dataset, src_dir_name, dst_ratio=0.80):
     """Copy some data to the corresponding directories
     dst: subset"""
 
     assert 0 < dst_ratio < 1, 'dst_ratio should be between 0 and 1'
+
+    dst_dir_name = 'Subset' + str(int(dst_ratio * 100)) + '/' + src_dir_name # e.g. Subset80/train
+
+    src_mesh7 = os.path.join(dataset, src_dir_name, 'mesh_7')
+    src_mesh63 = os.path.join(dataset, src_dir_name, 'mesh_63')
+
+    if not os.path.exists(src_mesh7) or not os.path.exists(src_mesh63):
+        raise FileNotFoundError('Source directories do not exist')
     
     dst_mesh7 = src_mesh7.replace(src_dir_name, dst_dir_name)
     dst_mesh63 = src_mesh63.replace(src_dir_name, dst_dir_name)
@@ -43,32 +52,26 @@ def copy_to_subset(src_mesh7, src_mesh63, src_dir_name, dst_dir_name, dst_ratio=
         print('\tCopied folder (mesh_63): ', folder)
 
 def main():
+    parser = argparse.ArgumentParser(description='Create a subset of the dataset')
+    parser.add_argument('--dataset', type=str, default='./data/Allen-Cahn_Periodic/', help='Path to the dataset')
+    parser.add_argument('--src_dir_name', type=str, default='train', help='Name of the source directory')
+    parser.add_argument('--dst_ratio', type=float, default=0.8, help='Ratio of data to be copied to the subset')
+    args = parser.parse_args()
+
+    print('Creating subset of the dataset...')
+    print('Dataset: ', args.dataset)
+    print('Source directory: ', args.src_dir_name)
+    print('Destination ratio: ', args.dst_ratio)
+    print('')
+
     ############################################
+    dst_ratio = 0.8
 
     copy_to_subset(
-        src_mesh7= './data/Erikson_Johnson/train/mesh_7',
-        src_mesh63 = './data/Erikson_Johnson/train/mesh_63',
-        src_dir_name='train',
-        dst_dir_name='Subset70/train',
-        dst_ratio=0.70
+        dataset= args.dataset,
+        src_dir_name=args.src_dir_name,
+        dst_ratio=dst_ratio
     )
-
-    copy_to_subset(
-        src_mesh7= './data/Erikson_Johnson/validation/mesh_7',
-        src_mesh63 = './data/Erikson_Johnson/validation/mesh_63',
-        src_dir_name='validation',
-        dst_dir_name='Subset70/validation',
-        dst_ratio=0.70
-    )
-
-    copy_to_subset(
-        src_mesh7= './data/Erikson_Johnson/test/mesh_7',
-        src_mesh63 = './data/Erikson_Johnson/test/mesh_63',
-        src_dir_name='test',
-        dst_dir_name='Subset70/test',
-        dst_ratio=0.70
-    )
-
 
 
 if __name__ == '__main__':

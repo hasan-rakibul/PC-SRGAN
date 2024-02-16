@@ -1,9 +1,8 @@
 # Collected from https://github.com/Lornatang/SRGAN-PyTorch
 # =========================================================
 
-
 # experiment name
-EXP_NAME: Allen-Cahn_No-Physics
+EXP_NAME: Allen-Cahn_Periodic_No-Physics_Subset80
 
 ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
 
@@ -43,15 +42,16 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/Allen_Cahn_Periodic/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/Allen_Cahn_Periodic/train/mesh_7
+    # TRAIN_GT_IMAGES_DIR: ./data/Allen_Cahn_Periodic/train/mesh_63
+    # TRAIN_LR_IMAGES_DIR: ./data/Allen_Cahn_Periodic/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Allen_Cahn_Periodic/Subset80/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/Allen_Cahn_Periodic/Subset80/train/mesh_7
     GT_IMAGE_SIZE: 64
     HAS_SUBFOLDER: True
     INDEX_VAL_MAPPING: ./data/Allen_Cahn_Periodic/index-val-mapping.csv
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
-    # PRETRAINED_G_MODEL: ./results/pretrained_models/SRResNet_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
@@ -62,7 +62,6 @@ TRAIN:
   # training hyperparameters
   HYP:
     EPOCHS: 100
-
     IMGS_PER_BATCH: 16
     SHUFFLE: True
     NUM_WORKERS: 4
