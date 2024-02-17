@@ -42,13 +42,13 @@ MODEL:
 
 TRAIN:
   DATASET:
-    # TRAIN_GT_IMAGES_DIR: ./data/Allen_Cahn_Periodic/train/mesh_63
-    # TRAIN_LR_IMAGES_DIR: ./data/Allen_Cahn_Periodic/train/mesh_7
-    TRAIN_GT_IMAGES_DIR: ./data/Allen_Cahn_Periodic/Subset80/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/Allen_Cahn_Periodic/Subset80/train/mesh_7
+    # TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_63
+    # TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_7
     GT_IMAGE_SIZE: 64
     HAS_SUBFOLDER: True
-    INDEX_VAL_MAPPING: ./data/Allen_Cahn_Periodic/index-val-mapping.csv
+    INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic/index-val-mapping.csv
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
@@ -110,8 +110,8 @@ TRAIN:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen_Cahn_Periodic/validation/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen_Cahn_Periodic/validation/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_7
     HAS_SUBFOLDER: True
 
   # Test hyperparameters
