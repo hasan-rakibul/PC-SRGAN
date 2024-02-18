@@ -253,7 +253,7 @@ def main() -> None:
          config)
     
     # append the results to a csv file
-    csv_path = os.path.join(config["TEST"]["SAVE_IMAGE_DIR"], "all_test_results.csv")
+    csv_path = os.path.join('./results/', "all_test_results.csv")
     with open(csv_path, 'a') as f:
         f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg},{mse_avg},{h1_avg}\n")
 

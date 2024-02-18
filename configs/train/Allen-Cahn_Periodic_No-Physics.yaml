@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_No-Physics_Subset80
+EXP_NAME: Allen-Cahn_Periodic_No-Physics_Subset60
 
 ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
 
@@ -44,8 +44,8 @@ TRAIN:
   DATASET:
     # TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_63
     # TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_7
-    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset60/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset60/train/mesh_7
     GT_IMAGE_SIZE: 64
     HAS_SUBFOLDER: True
     INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic/index-val-mapping.csv

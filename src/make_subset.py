@@ -43,13 +43,19 @@ def copy_to_subset(dataset, src_dir_name, dst_ratio=0.80):
     for folder in test_folders:
         src_path = os.path.join(src_mesh7, folder)
         dst_path = os.path.join(dst_mesh7, folder)
-        shutil.copytree(src_path, dst_path)
-        print('Copied folder (mesh_7): ', folder)
-
         src_path_63 = os.path.join(src_mesh63, folder)
         dst_path_63 = os.path.join(dst_mesh63, folder)
-        shutil.copytree(src_path_63, dst_path_63)
-        print('\tCopied folder (mesh_63): ', folder)
+
+        try:
+            shutil.copytree(src_path, dst_path)
+            print('Copied folder (mesh_7): ', folder)
+
+
+            shutil.copytree(src_path_63, dst_path_63)
+            print('\tCopied folder (mesh_63): ', folder)
+        except Exception as e:
+            print('Error: ', e)
+            break
 
 def main():
     parser = argparse.ArgumentParser(description='Create a subset of the dataset')
@@ -64,13 +70,10 @@ def main():
     print('Destination ratio: ', args.dst_ratio)
     print('')
 
-    ############################################
-    dst_ratio = 0.8
-
     copy_to_subset(
         dataset= args.dataset,
         src_dir_name=args.src_dir_name,
-        dst_ratio=dst_ratio
+        dst_ratio=args.dst_ratio
     )
 
 

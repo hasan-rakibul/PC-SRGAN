@@ -18,5 +18,5 @@ elif [[ $option = Erikson-Johnson ]]; then
     python src/SRGAN_train.py \
 --config_path ./configs/train/Erikson-Johnson_No-Physics.yaml >&1 | tee ./bash_logs/Erikson-Johnson_No-Physics_$(date +%y%m%d-%H%M).txt
 else
-    echo "No supported option $1. Check the argument."
+    echo "Your entered argument: $option is not valid. Argument must be one of the following: Allen-Cahn_Periodic, Allen-Cahn_Neumann, Erikson-Johnson"
 fi
