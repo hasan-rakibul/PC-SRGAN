@@ -1,7 +1,7 @@
 #!/bin/bash
  
 #SBATCH --job-name=TR-NoPHY
-#SBATCH --time=14:00:00
+#SBATCH --time=16:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=2GB
