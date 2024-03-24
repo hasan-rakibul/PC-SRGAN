@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 import scienceplots
 plt.style.use(['science', 'nature', 'bright'])
 
@@ -20,7 +21,7 @@ def generate_plot(phy, no_phy):
     anno_x = [13, 16.1, 17.7, 17.35]
     hline_y_all = []
 
-    fig, axs = plt.subplots(nrows=len(phy.columns)-1, ncols=1, figsize=(8, 6), sharex=True, gridspec_kw={'hspace': 0})
+    fig, axs = plt.subplots(nrows=len(phy.columns)-1, ncols=1, figsize=(6, 5), sharex=True, gridspec_kw={'hspace': 0.03})
 
     for i, column in enumerate(phy.columns):
         if i==len(phy.columns)-1:  # Skip last column
@@ -32,7 +33,7 @@ def generate_plot(phy, no_phy):
         axs[i].tick_params(which='minor', length=0) # Remove minor ticks
         
         if i == 0:
-            axs[i].legend(loc=(0.85, 0.22))
+            axs[i].legend(loc=(0.8, 0.2))
 
         if i in [0, 1]:
             hline_y = max(no_phy[column])
@@ -45,17 +46,22 @@ def generate_plot(phy, no_phy):
         y_range = axs[i].get_ylim()[1] - axs[i].get_ylim()[0]
         yticks_step = y_range/5
         axs[i].set_yticks(np.arange(0, axs[i].get_ylim()[1]+yticks_step, yticks_step))
+        
+        if i in [0, 3]:
+            axs[i].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        elif i in [1, 2]:
+            axs[i].yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
 
     # plotting vertical lines
     plot_vline(axs, anno_x, hline_y_all)
 
-    axs[-1].text(min(anno_x)-2, 40, f'{min(anno_x)}\%', color='k', rotation=90)
-    axs[-1].text(max(anno_x)+0.5, 40, f'{max(anno_x)}\%', color='k', rotation=90)
+    axs[-1].text(min(anno_x)-2.4, 40, f'{min(anno_x)}\%', color='k', rotation=90)
+    axs[-1].text(max(anno_x)+0.6, 40, f'{max(anno_x)}\%', color='k', rotation=90)
     # axs[-1].annotate(f'{min(anno_x)}\%', xy=(0.1655, 0.075), xytext=(0.15, 0.04), xycoords='figure fraction', textcoords='figure fraction',
     #                   arrowprops=dict(facecolor='black', arrowstyle='->'))
 
     axs[-1].set_xticks(phy.index, phy.index.astype(str))  # Set xticks to index values
-    axs[-1].set_xlabel('\% of training data')
+    axs[-1].set_xlabel('\% training data')
 
     plt.savefig('./results/ablation_study_training_data.pdf', format="pdf", dpi=600, bbox_inches='tight')
 
