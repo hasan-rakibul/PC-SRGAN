@@ -125,6 +125,26 @@ python -m pip install -r requirements-Bao22.txt
 
 # Notes
 
+## Ablation Study
+**Protocol:**
+- Dataset: Allen Cahn with Periodic BC and BDF time integrator
+- The validation and test set sizes are kept fixed
+- Only the training size is varied
+- Here, the index of dataframes (2, 5, 10, etc.) refers to the percentage of the training data used
+- Subset is randomly selected from the training set data. Here, n% means n% of timeseries, each having 100 or 50 timesteps
+
+**Number of batch (batch size=16) for each subset:**
+Subset (%) | Num_batch
+--- | ---
+2 | 69
+5 | 170
+10 | 333
+20 | 666
+40 | 1330
+60 | 2023
+80 | 2690
+100 | 3370
+
 # Failed attempt to install FeniCS using pip
 Taken and adapted from [https://fenics.readthedocs.io/en/latest/installation.html](https://fenics.readthedocs.io/en/latest/installation.html)
 
