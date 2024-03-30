@@ -71,7 +71,7 @@ def plot_time_vs_subsets(phy, no_phy):
     phy["Train+Val time (hours)"] = phy["Train+Val time (minutes)"] / 60
     no_phy["Train+Val time (hours)"] = no_phy["Train+Val time (minutes)"] / 60
 
-    fig, ax = plt.subplots(figsize=(5, 4))
+    fig, ax = plt.subplots(figsize=(5, 2))
 
     ax.plot(phy['Train+Val time (hours)'], label='PC-SRGAN')
     ax.plot(no_phy['Train+Val time (hours)'], label='SRGAN')
