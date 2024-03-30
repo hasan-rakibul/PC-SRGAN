@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -15,7 +16,7 @@ def plot_vline(axs, anno_x, hline_y_all):
             for ax_ in axs[j+1:]:
                 ax_.axvline(anno_x[i], color='k', linestyle='--')
 
-def generate_plot(phy, no_phy):
+def plot_metrics_vs_subsets(phy, no_phy):
     
     # for vertical lines
     anno_x = [13, 16.1, 17.7, 17.35]
@@ -66,7 +67,29 @@ def generate_plot(phy, no_phy):
     plt.savefig('./results/ablation_study_training_data.pdf', format="pdf", dpi=600, bbox_inches='tight')
 
 
+def plot_time_vs_subsets(phy, no_phy):
+    phy["Train+Val time (hours)"] = phy["Train+Val time (minutes)"] / 60
+    no_phy["Train+Val time (hours)"] = no_phy["Train+Val time (minutes)"] / 60
+
+    fig, ax = plt.subplots(figsize=(5, 4))
+
+    ax.plot(phy['Train+Val time (hours)'], label='PC-SRGAN')
+    ax.plot(no_phy['Train+Val time (hours)'], label='SRGAN')
+    ax.set_ylabel('Training and valdation time (hours)')
+    ax.set_xlabel('\% training data')
+    ax.legend()
+
+    ax.set_xticks(phy.index, phy.index.astype(str))  # Set xticks to index values
+
+    plt.savefig('./results/ablation_study_training_data_time.pdf', format="pdf", dpi=600, bbox_inches='tight')
+
+
 def main():
+    parser = argparse.ArgumentParser(description='Plot ablation study results')
+    parser.add_argument("--metrics", action='store_true', help='Plot metrics vs subsets')
+    parser.add_argument("--time", action='store_true', help='Plot time vs subsets')
+    args = parser.parse_args()
+
     phy = pd.DataFrame(columns=['PSNR', 'SSIM', 'MSE', 'H1', 'Train+Val time (minutes)'])
     no_phy = pd.DataFrame(columns=['PSNR', 'SSIM', 'MSE', 'H1', 'Train+Val time (minutes)'])
     
@@ -94,7 +117,12 @@ def main():
     phy.loc[100] = 37.27479402558142,0.9651788410781005,0.00405540733345567,7.237192213714728, 853.64
     no_phy.loc[100] = 32.44001455102469,0.9083833506067559,0.01110022178424288,18.14477053597181, 810.40
 
-    generate_plot(phy, no_phy)
+    if args.metrics:
+        plot_metrics_vs_subsets(phy, no_phy)
+    if args.time:
+        plot_time_vs_subsets(phy, no_phy)
+    else:
+        raise ValueError('Please provide an argument (--metrics or --time) to plot metrics or time')
 
 if __name__ == "__main__":
     main()
