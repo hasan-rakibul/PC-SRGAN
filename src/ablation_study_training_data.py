@@ -4,17 +4,21 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 import scienceplots
+
 plt.style.use(['science', 'nature', 'bright'])
 
-def plot_vline(axs, anno_x, hline_y_all):
+def plot_dot_and_vline(axs, anno_x, hline_y_all):
     for i, ax in enumerate(axs):
-        y_ratio = (hline_y_all[i] - ax.get_ylim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+        if i != len(hline_y_all):
+            # Skip last time column
+            y_ratio = (hline_y_all[i] - ax.get_ylim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
         for j in range(i, len(anno_x)):
+            mycolor = 'k'
             if j == i:
-                ax.axvline(anno_x[i], ymax=y_ratio, color='k', linestyle='--')
+                ax.axvline(anno_x[i], ymax=y_ratio, color=mycolor, linestyle='--')
                 ax.scatter(anno_x[i], hline_y_all[i], marker='o', color='k')
             for ax_ in axs[j+1:]:
-                ax_.axvline(anno_x[i], color='k', linestyle='--')
+                ax_.axvline(anno_x[i], color=mycolor, linestyle='--')
 
 def plot_metrics_vs_subsets(phy, no_phy):
     
@@ -22,7 +26,7 @@ def plot_metrics_vs_subsets(phy, no_phy):
     anno_x = [13, 16.1, 17.7, 17.35]
     hline_y_all = []
 
-    fig, axs = plt.subplots(nrows=len(phy.columns)-1, ncols=1, figsize=(6, 5), sharex=True, gridspec_kw={'hspace': 0.03})
+    _, axs = plt.subplots(nrows=len(phy.columns)-1, ncols=1, figsize=(6, 5), sharex=True, gridspec_kw={'hspace': 0.03})
 
     for i, column in enumerate(phy.columns):
         if i==len(phy.columns)-1:  # Skip last column
@@ -36,7 +40,7 @@ def plot_metrics_vs_subsets(phy, no_phy):
         if i == 0:
             axs[i].legend(loc=(0.8, 0.2))
 
-        if i in [0, 1]:
+        if i in [0, 1, 4]:
             hline_y = max(no_phy[column])
         elif i in [2, 3]:
             hline_y = min(no_phy[column])
@@ -54,7 +58,7 @@ def plot_metrics_vs_subsets(phy, no_phy):
             axs[i].yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
 
     # plotting vertical lines
-    plot_vline(axs, anno_x, hline_y_all)
+    plot_dot_and_vline(axs, anno_x, hline_y_all)
 
     axs[-1].text(min(anno_x)-2.4, 40, f'{min(anno_x)}\%', color='k', rotation=90)
     axs[-1].text(max(anno_x)+0.6, 40, f'{max(anno_x)}\%', color='k', rotation=90)
@@ -83,15 +87,72 @@ def plot_time_vs_subsets(phy, no_phy):
 
     plt.savefig('./results/ablation_study_training_data_time.pdf', format="pdf", dpi=600, bbox_inches='tight')
 
+def plot_metrics_time_vs_subsets(phy, no_phy):
+
+    # put time at the end
+    phy = phy.iloc[:, [0, 1, 2, 3, 5, 4]]
+    no_phy = no_phy.iloc[:, [0, 1, 2, 3, 5, 4]]
+    
+    # for vertical lines
+    anno_x = [13, 16.1, 17.7, 17.35, 16.1]
+    hline_y_all = []
+
+    fig, axs = plt.subplots(nrows=len(phy.columns), ncols=1, figsize=(4, 6), sharex=True, gridspec_kw={'hspace': 0.0})
+
+    for i, column in enumerate(phy.columns):
+        axs[i].plot(phy[column], label='PC-SRGAN', marker='x', color='blue')
+        axs[i].plot(no_phy[column], label='SRGAN', marker='x', color='red')
+        axs[i].set_ylabel(column)
+
+        axs[i].tick_params(which='minor', length=0) # Remove minor ticks
+        
+        if i == 0:
+        #     axs[i].legend(loc=(0.7, 0.15))
+            axs[i].legend(loc='upper center', bbox_to_anchor=(0.5, 1.30), ncol=2, fancybox=True, shadow=True)
+
+        if i in [0, 1, 4]:
+            hline_y = max(no_phy[column])
+        elif i in [2, 3]:
+            hline_y = min(no_phy[column])
+        
+        if i != 5:
+            # Skip plotting horizontal line for time    
+            axs[i].plot([2, 100], [hline_y, hline_y], 'k--')
+            hline_y_all.append(hline_y)
+
+        y_range = axs[i].get_ylim()[1] - axs[i].get_ylim()[0]
+        yticks_step = y_range/5
+        # axs[i].set_yticks(np.arange(axs[i].get_ylim()[0], axs[i].get_ylim()[1]+yticks_step, yticks_step)) # all yticks
+        axs[i].set_yticks(np.arange(axs[i].get_ylim()[0]+yticks_step, axs[i].get_ylim()[1], yticks_step))
+        
+        if i in [0, 3, 4]:
+            axs[i].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        elif i in [1, 2]:
+            axs[i].yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+
+    # plotting vertical lines
+    plot_dot_and_vline(axs, anno_x, hline_y_all)
+
+    axs[-1].text(min(anno_x)-3.5, 550, f'{min(anno_x)}\%', color='k', rotation=90)
+    axs[-1].text(max(anno_x)+1.2, 550, f'{max(anno_x)}\%', color='k', rotation=90)
+    # axs[-1].annotate(f'{min(anno_x)}\%', xy=(0.1655, 0.075), xytext=(0.15, 0.04), xycoords='figure fraction', textcoords='figure fraction',
+    #                   arrowprops=dict(facecolor='black', arrowstyle='->'))
+
+    axs[-1].set_xticks(phy.index, phy.index.astype(str), rotation=45)  # Set xticks to index values
+    axs[-1].set_xlabel('\% of training data')
+    
+    plt.savefig('./results/metrics_vs_data_percent.pdf', format="pdf", dpi=600, bbox_inches='tight')
+    plt.show()
 
 def main():
     parser = argparse.ArgumentParser(description='Plot ablation study results')
     parser.add_argument("--metrics", action='store_true', help='Plot metrics vs subsets')
     parser.add_argument("--time", action='store_true', help='Plot time vs subsets')
+    parser.add_argument("--merged", action='store_true', help='Plot metrics and time vs subsets')
     args = parser.parse_args()
 
-    phy = pd.DataFrame(columns=['PSNR', 'SSIM', 'MSE', 'H1', 'Train+Val time (minutes)'])
-    no_phy = pd.DataFrame(columns=['PSNR', 'SSIM', 'MSE', 'H1', 'Train+Val time (minutes)'])
+    phy = pd.DataFrame(columns=['PSNR', 'SSIM', 'MSE', 'MSGE', 'Train+Val time (minutes)'])
+    no_phy = pd.DataFrame(columns=['PSNR', 'SSIM', 'MSE', 'MSGE', 'Train+Val time (minutes)'])
     
     phy.loc[2] = 27.698170159312514,0.7808334120491675,0.03491706332164134,50.216907022906135, 204.08
     no_phy.loc[2] = 24.528395977520248,0.6713362337724,0.043233287846358916,57.25518374599654, 212.24
@@ -117,12 +178,19 @@ def main():
     phy.loc[100] = 37.27479402558142,0.9651788410781005,0.00405540733345567,7.237192213714728, 853.64
     no_phy.loc[100] = 32.44001455102469,0.9083833506067559,0.01110022178424288,18.14477053597181, 810.40
 
+
+    maxg = (2/(1/(64**2)))**2
+    phy["GSNR"] = 10*np.log10(maxg/phy["MSGE"])
+    no_phy["GSNR"] = 10*np.log10(maxg/no_phy["MSGE"])
+
     if args.metrics:
         plot_metrics_vs_subsets(phy, no_phy)
     if args.time:
         plot_time_vs_subsets(phy, no_phy)
+    if args.merged:
+        plot_metrics_time_vs_subsets(phy, no_phy)
     else:
-        raise ValueError('Please provide an argument (--metrics or --time) to plot metrics or time')
+        raise ValueError('Please provide an argument (--metrics, --time, or --merged)')
 
 if __name__ == "__main__":
     main()

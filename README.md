@@ -24,6 +24,7 @@ Step 3. Split the dataset into train, validation, and test sets using `src/split
 ```bash
 bash src/SRGAN_download_weights.sh SRGAN_x8-SRGAN_ImageNet
 ```
+3. To directly test the model, pretrained checkpoints of four experimental setups are available [here in Google Drive](https://drive.google.com/drive/folders/1MkQsvRpItVb7VaShLBVHgFmWQkbcTK1B?usp=sharing). Download and store them as the `results` directory.
 3. Install necessary packages mentioned in `requirements.txt` (Python version 3.9.4)
 4. Check and configure configuration files at `configs/train/*.yaml`
 
