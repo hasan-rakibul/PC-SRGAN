@@ -9,6 +9,9 @@ samples/
 results/
 almost_unnecessary/
 
+additional_baselines/*
+!additional_baselines/esrgan.py
+
 *.pth.tar
 *.out
 src/draft.ipynb
