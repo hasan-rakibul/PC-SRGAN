@@ -1,6 +1,6 @@
 #!/bin/bash
  
-#SBATCH --job-name=ESRGAN
+#SBATCH --job-name=TR-PHY
 #SBATCH --output=bash_logs/%j_%x.out
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1
@@ -12,4 +12,4 @@ module load pytorch/2.2.0-rocm5.7.3
 
 singularity exec $SINGULARITY_CONTAINER bash -c "\
 source .venv/bin/activate && \
-python additional_baselines/esrgan.py "
+./train_physics.sh Allen-Cahn_Periodic"

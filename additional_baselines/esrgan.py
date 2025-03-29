@@ -223,7 +223,7 @@ def load_dataset(
                                         pin_memory=config["TEST"]["HYP"]["PIN_MEMORY"],
                                         drop_last=False,
                                         persistent_workers=config["TEST"]["HYP"]["PERSISTENT_WORKERS"])
-
+    
     # Replace the data set iterator with CUDA to speed up
     train_data_prefetcher = CUDAPrefetcher(degenerated_train_dataloader, device)
     paired_test_data_prefetcher = CUDAPrefetcher(paired_test_dataloader, device)

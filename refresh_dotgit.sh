@@ -11,7 +11,7 @@ if [[ -z "$REMOTE_URL" ]]; then
     exit 1
 fi
 
-# TEMP_DIR=$(mktemp -d)
+# TEMP_DIR=$(mktemp -d) # cause two warnings w/ "failed to preserve ownership for"
 TEMP_DIR=".git_temp"
 
 echo "Cloning repository to a temporary location..."
