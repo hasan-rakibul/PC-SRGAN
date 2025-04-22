@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_Physics_BDF_Weight-Ablation-inner1e-5
+EXP_NAME: Allen-Cahn_Periodic_Physics_BDF
 
 # if using Erikson_Johnson dataset, set to True
 ERIKSON_JOHNSON: False
@@ -101,7 +101,7 @@ TRAIN:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
-      INNER_WEIGHT: [ 0.00001 ] # 0.00000001
+      INNER_WEIGHT: [ 0.00000001 ]
       TIME_INTEGRATOR: BDF # Options: BDF, CN, EE
       BOUNDARY_WEIGHT: [ 5 ]
       BOUNDARY_TYPE: Periodic # Options: Dirichlet, Periodic, Neumann

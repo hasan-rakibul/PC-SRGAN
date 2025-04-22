@@ -241,6 +241,7 @@ def load_dataset(
     )
 
     # Load the registration test dataset
+    # the current config (train)'s test is actually the validation dataset
     paired_test_datasets = PairedImageDataset(config["TEST"]["DATASET"]["PAIRED_TEST_GT_IMAGES_DIR"],
                                               config["TEST"]["DATASET"]["PAIRED_TEST_LR_IMAGES_DIR"],
                                               config["TEST"]["DATASET"]["HAS_SUBFOLDER"],
