@@ -48,7 +48,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path",
                         type=str,
-                        default="./additional_baselines/esrgan.yaml",
+                        default="./additional_baselines/train_rrdb.yaml",
                         help="Path to train config file.")
     args = parser.parse_args()
 

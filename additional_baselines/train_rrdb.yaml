@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_No-Physics_ESRGAN
+EXP_NAME: Allen-Cahn_Periodic_No-Physics_RRDB
 
 ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
 

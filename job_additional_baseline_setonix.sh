@@ -10,10 +10,10 @@
 
 module load pytorch/2.2.0-rocm5.7.3
 
-# Train
+# Train RRDB
 # singularity exec $SINGULARITY_CONTAINER bash -c "\
 # source .venv/bin/activate && \
-# python additional_baselines/esrgan.py"
+# python additional_baselines/train_rrdb.py"
 
 
 # Test - make sure to set the correct (pre-determined, if doing train-test at one go) 
