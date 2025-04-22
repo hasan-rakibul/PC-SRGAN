@@ -4,4 +4,5 @@ rclone -v copy ./ pawsey1001_rakib:pc-srgan/ \
 --include "data/Allen-Cahn_Periodic.zip" \
 --include "tmp/**" \
 --include "bash_logs/**" \
---include "results/**" \
+--include "results/all_test_results.csv" \
+# --include "results/**" \

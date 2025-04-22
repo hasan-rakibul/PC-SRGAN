@@ -1,0 +1,53 @@
+# Based on https://github.com/Lornatang/SRGAN-PyTorch
+# =========================================================
+
+# experiment name
+EXP_NAME: Allen-Cahn_Periodic_No-Physics_ESRGAN
+
+ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
+
+# random number seed
+SEED: 0
+# super resolution magnification factor
+SCALE: 8
+# run device model
+DEVICE_ID: 0
+
+BACKEND: eager
+
+MODEL_WEIGHTS_PATH: ./results/Allen-Cahn_Periodic_No-Physics_ESRGAN/g_best.pth.tar
+
+# Model define
+MODEL:
+  EMA:
+    ENABLE: True
+    DECAY: 0.999
+    COMPILED: True
+  G:
+    NAME: rrdbnet_x8
+    IN_CHANNELS: 1
+    OUT_CHANNELS: 1
+    CHANNELS: 64
+    GROWTH_CHANNELS: 32
+    NUM_RRDB: 23
+    COMPILED: True
+
+TEST:
+  DATASET:
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/test/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/test/mesh_7
+    HAS_SUBFOLDER: True
+
+  # Test hyperparameters
+  HYP:
+    IMGS_PER_BATCH: 1 # should be always 1 as the metrics can't handle batched data
+    SHUFFLE: False
+    NUM_WORKERS: 1
+    PIN_MEMORY: True
+    PERSISTENT_WORKERS: True
+
+  # SAVE_IMAGE_DIR: ./results/validation/
+  SAVE_IMAGE_DIR: ""
+
+  # saving the difference between the ground truth and the prediction
+  SAVE_IMAGE_DIFF_DIR: ""
