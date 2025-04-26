@@ -598,8 +598,9 @@ def train(
             writer.add_scalar("Train/Pixel_Loss", pixel_loss.item(), iters)
             writer.add_scalar("Train/Feature_Loss", feature_loss.item(), iters)
             writer.add_scalar("Train/Adversarial_Loss", adversarial_loss.item(), iters)
-            writer.add_scalar("Train/Physics_Inner_Loss", physics_inner_loss.item(), iters)
-            writer.add_scalar("Train/Physics_Boundary_Loss", physics_boundary_loss.item(), iters)
+            if physics:
+                writer.add_scalar("Train/Physics_Inner_Loss", physics_inner_loss.item(), iters)
+                writer.add_scalar("Train/Physics_Boundary_Loss", physics_boundary_loss.item(), iters)
             writer.add_scalar("Train/D(GT)_Probability", torch.sigmoid_(torch.mean(gt_output.detach())).item(), iters)
             writer.add_scalar("Train/D(SR)_Probability", torch.sigmoid_(torch.mean(sr_output.detach())).item(), iters)
             
@@ -635,8 +636,9 @@ def train(
         writer.add_scalar("Train/Pixel_Loss", avg_pixel_loss, epoch + 1)
         writer.add_scalar("Train/Feature_Loss", avg_feature_loss, epoch + 1)
         writer.add_scalar("Train/Adversarial_Loss", avg_adversarial_loss, epoch + 1)
-        writer.add_scalar("Train/Physics_Inner_Loss", avg_physics_inner_loss, epoch + 1)
-        writer.add_scalar("Train/Physics_Boundary_Loss", avg_physics_boundary_loss, epoch + 1)
+        if physics:
+            writer.add_scalar("Train/Physics_Inner_Loss", avg_physics_inner_loss, epoch + 1)
+            writer.add_scalar("Train/Physics_Boundary_Loss", avg_physics_boundary_loss, epoch + 1)
         writer.add_scalar("Train/D(GT)_Probability", avg_gt_probability, epoch + 1)
         writer.add_scalar("Train/D(SR)_Probability", avg_sr_probability, epoch + 1)
 
