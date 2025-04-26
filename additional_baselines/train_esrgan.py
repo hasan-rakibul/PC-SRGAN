@@ -28,10 +28,13 @@ from torch.optim.swa_utils import AveragedModel
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-import SRGAN_model
+import ESRGAN_model
+
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "src"))
+
 from physics import PhysicsLossImageBoundary, PhysicsLossInnerImageAllenCahn, PhysicsLossInnerImageEriksonJohnson, H1Error
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset, FEMPhyDataset
-# from SRGAN_imgproc import random_crop_torch, random_rotate_torch, random_vertically_flip_torch, random_horizontally_flip_torch
 from SRGAN_test import test
 from SRGAN_utils import load_resume_state_dict, load_pretrained_state_dict, make_directory, save_checkpoint, \
     Summary, AverageMeter, ProgressMeter
@@ -39,15 +42,13 @@ from SRGAN_utils import load_resume_state_dict, load_pretrained_state_dict, make
 from torchmetrics.image import StructuralSimilarityIndexMeasure, PeakSignalNoiseRatio
 from torchmetrics.regression import MeanSquaredError
 
-# from SRGAN_dataset import CPUPrefetcher
-
-
 def main():
     start_time = time.time()
     # Read parameters from configuration file
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path",
                         type=str,
+                        default="./additional_baselines/train_esrgan.yaml",
                         help="Path to train config file.")
     args = parser.parse_args()
 
@@ -58,7 +59,7 @@ def main():
     random.seed(config["SEED"])
     np.random.seed(config["SEED"])
     torch.manual_seed(config["SEED"])
-    # torch.cuda.manual_seed_all(config["SEED"]) # if use multi-GPU simultaneously, this line should be uncommented
+    # torch.cuda.manual_seed_all(config["SEED"])
 
     # Because the size of the input image is fixed, the fixed CUDNN convolution method can greatly increase the running speed
     # cudnn.benchmark = True
@@ -70,7 +71,7 @@ def main():
     # Initialize the mixed precision method
     scaler = amp.GradScaler()
 
-    # Default to start training from scratch; during resume, start_epoch will be loaded from saved model
+    # Default to start training from scratch
     start_epoch = 0
 
     # Initialize the image clarity evaluation index
@@ -81,12 +82,11 @@ def main():
 
     # Define the running device number
     device = torch.device("cuda", config["DEVICE_ID"])
-    # device = torch.device("cpu")
 
     # Define the basic functions needed to start training
     train_data_prefetcher, paired_test_data_prefetcher = load_dataset(config, device)
     g_model, ema_g_model, d_model = build_model(config, device)
-    pixel_criterion, content_criterion, adversarial_criterion, physics_inner_criterion, physics_boundary_criterion = define_loss(config, device)
+    pixel_criterion, feature_criterion, adversarial_criterion, physics_inner_criterion, physics_boundary_criterion = define_loss(config, device)
     g_optimizer, d_optimizer = define_optimizer(g_model, d_model, config)
     g_scheduler, d_scheduler = define_scheduler(g_optimizer, d_optimizer, config)
 
@@ -153,7 +153,7 @@ def main():
               d_model,
               train_data_prefetcher,
               pixel_criterion,
-              content_criterion,
+              feature_criterion,
               adversarial_criterion,
               physics_inner_criterion,
               physics_boundary_criterion,
@@ -177,7 +177,8 @@ def main():
                           h1_model,
                           device,
                           config)
-        
+        print("\n")
+
         # Write the evaluation indicators of each round of Epoch to the log
         writer.add_scalar(f"Test/PSNR", psnr, epoch + 1)
         writer.add_scalar(f"Test/SSIM", ssim, epoch + 1)
@@ -191,37 +192,42 @@ def main():
         best_ssim = max(ssim, best_ssim)
         best_mse = min(mse, best_mse)
         best_h1 = min(h1, best_h1)
-        save_checkpoint({"epoch": epoch + 1,
-                         "psnr": psnr,
-                         "ssim": ssim,
-                         "mse": mse,
-                         "h1": h1,
-                         "state_dict": g_model.state_dict(),
-                         "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
-                         "optimizer": g_optimizer.state_dict(),
-                         "scheduler": g_scheduler.state_dict()},
-                        f"g_epoch_{epoch + 1}.pth.tar",
-                        samples_dir,
-                        results_dir,
-                        "g_best.pth.tar",
-                        "g_last.pth.tar",
-                        is_best,
-                        is_last)
-        save_checkpoint({"epoch": epoch + 1,
-                         "psnr": psnr,
-                         "ssim": ssim,
-                         "mse": mse,
-                         "h1": h1,
-                         "state_dict": d_model.state_dict(),
-                         "optimizer": d_optimizer.state_dict(),
-                         "scheduler": d_scheduler.state_dict()},
-                        f"d_epoch_{epoch + 1}.pth.tar",
-                        samples_dir,
-                        results_dir,
-                        "d_best.pth.tar",
-                        "d_last.pth.tar",
-                        is_best,
-                        is_last)
+        save_checkpoint({
+            "epoch": epoch + 1,
+            "psnr": psnr,
+            "ssim": ssim,
+            "mse": mse,
+            "h1": h1,
+            "state_dict": g_model.state_dict(),
+            "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
+            "optimizer": g_optimizer.state_dict(),
+            "scheduler": g_scheduler.state_dict() if g_scheduler is not None else None
+        },
+            f"g_epoch_{epoch + 1}.pth.tar",
+            samples_dir,
+            results_dir,
+            "g_best.pth.tar",
+            "g_last.pth.tar",
+            is_best,
+            is_last)
+        save_checkpoint({
+            "epoch": epoch + 1,
+            "psnr": psnr,
+            "ssim": ssim,
+            "mse": mse,
+            "h1": h1,
+            "state_dict": d_model.state_dict(),
+            "ema_state_dict": None,
+            "optimizer": d_optimizer.state_dict(),
+            "scheduler": d_scheduler.state_dict() if d_scheduler is not None else None,
+        },
+            f"d_epoch_{epoch + 1}.pth.tar",
+            samples_dir,
+            results_dir,
+            "d_best.pth.tar",
+            "d_last.pth.tar",
+            is_best,
+            is_last)
 
         print("Cumulative time elapsed during current training: {:.2f}min".format((time.time() - start_time) / 60))
         print("\n")
@@ -231,7 +237,7 @@ def load_dataset(
         device: torch.device,
 ) -> list[CUDAPrefetcher, CUDAPrefetcher]:
     # Load the train dataset
-   
+
     degenerated_train_datasets = FEMPhyDataset(
         config["TRAIN"]["DATASET"]["TRAIN_GT_IMAGES_DIR"],
         config["TRAIN"]["DATASET"]["TRAIN_LR_IMAGES_DIR"],
@@ -278,15 +284,14 @@ def build_model(
         config: Any,
         device: torch.device,
 ) -> list[nn.Module, nn.Module | Any, nn.Module]:
-    g_model = SRGAN_model.__dict__[config["MODEL"]["G"]["NAME"]](in_channels=config["MODEL"]["G"]["IN_CHANNELS"],
+    g_model = ESRGAN_model.__dict__[config["MODEL"]["G"]["NAME"]](in_channels=config["MODEL"]["G"]["IN_CHANNELS"],
                                                            out_channels=config["MODEL"]["G"]["OUT_CHANNELS"],
                                                            channels=config["MODEL"]["G"]["CHANNELS"],
-                                                           num_rcb=config["MODEL"]["G"]["NUM_RCB"],
-                                                           freeze=config["MODEL"]["G"]["FREEZE"])
-    d_model = SRGAN_model.__dict__[config["MODEL"]["D"]["NAME"]](in_channels=config["MODEL"]["D"]["IN_CHANNELS"],
+                                                           growth_channels=config["MODEL"]["G"]["GROWTH_CHANNELS"],
+                                                           num_rrdb=config["MODEL"]["G"]["NUM_RRDB"])
+    d_model = ESRGAN_model.__dict__[config["MODEL"]["D"]["NAME"]](in_channels=config["MODEL"]["D"]["IN_CHANNELS"],
                                                            out_channels=config["MODEL"]["D"]["OUT_CHANNELS"],
-                                                           channels=config["MODEL"]["D"]["CHANNELS"],
-                                                           freeze=config["MODEL"]["D"]["FREEZE"])
+                                                           channels=config["MODEL"]["D"]["CHANNELS"])
 
     g_model = g_model.to(device)
     d_model = d_model.to(device)
@@ -311,14 +316,14 @@ def build_model(
     return g_model, ema_g_model, d_model
 
 
-def define_loss(config: Any, device: torch.device) -> list[nn.MSELoss, SRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, PhysicsLossInnerImageAllenCahn, PhysicsLossImageBoundary]:
-    if config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["NAME"] == "MSELoss":
-        pixel_criterion = nn.MSELoss()
+def define_loss(config: Any, device: torch.device) -> list[nn.L1Loss, ESRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, PhysicsLossInnerImageAllenCahn, PhysicsLossImageBoundary]:
+    if config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["NAME"] == "L1Loss":
+        pixel_criterion = nn.L1Loss()
     else:
         raise NotImplementedError(f"Loss {config['TRAIN']['LOSSES']['PIXEL_LOSS']['NAME']} is not implemented.")
 
     if config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["NAME"] == "ContentLoss":
-        content_criterion = SRGAN_model.ContentLoss(
+        feature_criterion = ESRGAN_model.ContentLoss(
             config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["NET_CFG_NAME"],
             config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["BATCH_NORM"],
             config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["NUM_CLASSES"],
@@ -329,7 +334,7 @@ def define_loss(config: Any, device: torch.device) -> list[nn.MSELoss, SRGAN_mod
             config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["IN_CHANNELS"]
         )
     else:
-        raise NotImplementedError(f"Loss {config['TRAIN']['LOSSES']['CONTENT_LOSS']['NAME']} is not implemented.")
+        raise NotImplementedError(f"Loss {config['TRAIN']['LOSSES']['ContentLoss']['NAME']} is not implemented.")
 
     if config["TRAIN"]["LOSSES"]["ADVERSARIAL_LOSS"]["NAME"] == "vanilla":
         adversarial_criterion = nn.BCEWithLogitsLoss()
@@ -337,9 +342,9 @@ def define_loss(config: Any, device: torch.device) -> list[nn.MSELoss, SRGAN_mod
         raise NotImplementedError(f"Loss {config['TRAIN']['LOSSES']['ADVERSARIAL_LOSS']['NAME']} is not implemented.")
 
     pixel_criterion = pixel_criterion.to(device)
-    content_criterion = content_criterion.to(device)
+    feature_criterion = feature_criterion.to(device)
     adversarial_criterion = adversarial_criterion.to(device)
-
+    
     if config["ERIKSON_JOHNSON"]:
         print("\nUsing PhysicsLossInnerImageEriksonJohnson\n")
         physics_inner_criterion = PhysicsLossInnerImageEriksonJohnson(time_integrator=config['TRAIN']['LOSSES']['PHYSICS_LOSS']['TIME_INTEGRATOR'])
@@ -348,8 +353,8 @@ def define_loss(config: Any, device: torch.device) -> list[nn.MSELoss, SRGAN_mod
         physics_inner_criterion = PhysicsLossInnerImageAllenCahn(time_integrator=config['TRAIN']['LOSSES']['PHYSICS_LOSS']['TIME_INTEGRATOR'])
     
     physics_boundary_criterion = PhysicsLossImageBoundary(boundary_type=config['TRAIN']['LOSSES']['PHYSICS_LOSS']['BOUNDARY_TYPE'])
-
-    return pixel_criterion, content_criterion, adversarial_criterion, physics_inner_criterion, physics_boundary_criterion
+    
+    return pixel_criterion, feature_criterion, adversarial_criterion, physics_inner_criterion, physics_boundary_criterion
 
 
 def define_optimizer(g_model: nn.Module, d_model: nn.Module, config: Any) -> list[optim.Adam, optim.Adam]:
@@ -392,7 +397,7 @@ def train(
         d_model: nn.Module,
         train_data_prefetcher: CUDAPrefetcher,
         pixel_criterion: nn.L1Loss,
-        content_criterion: SRGAN_model.ContentLoss,
+        content_criterion: ESRGAN_model.ContentLoss,
         adversarial_criterion: nn.BCEWithLogitsLoss,
         physics_inner_criterion: PhysicsLossInnerImageAllenCahn,
         physics_boundary_criterion: PhysicsLossImageBoundary,
@@ -408,7 +413,7 @@ def train(
     batches = len(train_data_prefetcher)
 
     # The information printed by the progress bar
-    batch_time = AverageMeter("Time", ":6.3f", Summary.SUM) # Summary.** controls what prints at the end of each test cycle
+    batch_time = AverageMeter("Time", ":6.3f", Summary.SUM)
     data_time = AverageMeter("Data", ":6.3f", Summary.NONE)
     g_losses = AverageMeter("G Loss", ":6.6f", Summary.NONE)
     d_losses = AverageMeter("D Loss", ":6.6f", Summary.NONE)
@@ -422,25 +427,12 @@ def train(
 
     # Define loss function weights
     pixel_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["WEIGHT"]).to(device)
-    feature_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["WEIGHT"]).to(device)
+    content_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["CONTENT_LOSS"]["WEIGHT"]).to(device)
     adversarial_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["ADVERSARIAL_LOSS"]["WEIGHT"]).to(device)
     physics_inner_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["PHYSICS_LOSS"]["INNER_WEIGHT"]).to(device)
     physics_boundary_weight = torch.Tensor(config["TRAIN"]["LOSSES"]["PHYSICS_LOSS"]["BOUNDARY_WEIGHT"]).to(device)
 
-    # Initialise variables to accumulate values over the epoch
-    total_d_loss = 0.0
-    total_d_loss_gt = 0.0
-    total_d_loss_sr = 0.0
-    total_g_loss = 0.0
-    total_pixel_loss = 0.0
-    total_feature_loss = 0.0
-    total_adversarial_loss = 0.0
-    total_physics_inner_loss = 0.0
-    total_physics_boundary_loss = 0.0
-    total_gt_probability = 0.0
-    total_sr_probability = 0.0
-
-    # Initialise data batches
+    # Initialize data batches
     batch_index = 0
     # Set the dataset iterator pointer to 0
     train_data_prefetcher.reset()
@@ -454,15 +446,9 @@ def train(
     if config["MODEL"]["D"]["NAME"] == "discriminator_for_vgg":
         real_label = torch.full([batch_size, 1], 1.0, dtype=torch.float, device=device)
         fake_label = torch.full([batch_size, 1], 0.0, dtype=torch.float, device=device)
-    elif config["MODEL"]["D"]["NAME"] == "discriminator_for_unet":
-        image_height = config["TRAIN"]["DATASET"]["GT_IMAGE_SIZE"]
-        image_width = config["TRAIN"]["DATASET"]["GT_IMAGE_SIZE"]
-        real_label = torch.full([batch_size, 1, image_height, image_width], 1.0, dtype=torch.float, device=device)
-        fake_label = torch.full([batch_size, 1, image_height, image_width], 0.0, dtype=torch.float, device=device)
     else:
         raise ValueError(f"The `{config['MODEL']['D']['NAME']}` is not supported.")
-    
-    # whether to add physics loss
+
     physics = not(physics_inner_weight == 0 and physics_boundary_weight == 0)
 
     while batch_data is not None:
@@ -478,16 +464,6 @@ def train(
         r = batch_data["r"].to(device, non_blocking=True)
         theta = batch_data["theta"].to(device, non_blocking=True)
 
-        # image data augmentation
-        # commented out because it may interfere with physics loss
-        # gt, lr = random_crop_torch(gt,
-        #                            lr,
-        #                            config["TRAIN"]["DATASET"]["GT_IMAGE_SIZE"],
-        #                            config["SCALE"])
-        # gt, lr = random_rotate_torch(gt, lr, config["SCALE"], [0, 90, 180, 270])
-        # gt, lr = random_vertically_flip_torch(gt, lr)
-        # gt, lr = random_horizontally_flip_torch(gt, lr)
-
         # Record the time to load a batch of data
         data_time.update(time.time() - end)
 
@@ -502,14 +478,19 @@ def train(
         # Calculate the perceptual loss of the generator, mainly including pixel loss, feature loss and confrontation loss
         with amp.autocast():
             sr = g_model(lr)
-            # print(sr.shape, gt.shape, lr.shape) # ([16, 1, 64, 64]) ([16, 1, 64, 64]) ([16, 1, 8, 8])
+            # Output discriminator to discriminate object probability
+            gt_output = d_model(gt.detach().clone())
+            sr_output = d_model(sr)
             pixel_loss = pixel_criterion(sr, gt)
-            feature_loss = content_criterion(sr, gt)
-            adversarial_loss = adversarial_criterion(d_model(sr), real_label)
+            content_loss = content_criterion(sr, gt)
+            d_loss_gt = adversarial_criterion(gt_output - torch.mean(sr_output), fake_label) * 0.5
+            d_loss_sr = adversarial_criterion(sr_output - torch.mean(gt_output), real_label) * 0.5
+            adversarial_loss = d_loss_gt + d_loss_sr
             pixel_loss = torch.sum(torch.mul(pixel_weight, pixel_loss))
-            feature_loss = torch.sum(torch.mul(feature_weight, feature_loss))
+            content_loss = torch.sum(torch.mul(content_weight, content_loss))
             adversarial_loss = torch.sum(torch.mul(adversarial_weight, adversarial_loss))
-
+            
+            # Compute generator total loss
             if physics:
                 # adding physics loss
                 physics_inner_loss = physics_inner_criterion(
@@ -520,10 +501,10 @@ def train(
 
                 physics_boundary_loss = physics_boundary_criterion(sr, gt)
                 physics_boundary_loss = torch.sum(torch.mul(physics_boundary_weight, physics_boundary_loss))
-                g_loss = pixel_loss + feature_loss + adversarial_loss + physics_inner_loss + physics_boundary_loss
+                g_loss = pixel_loss + content_loss + adversarial_loss + physics_inner_loss + physics_boundary_loss
             else:
-                g_loss = pixel_loss + feature_loss + adversarial_loss
-            
+                g_loss = pixel_loss + content_loss + adversarial_loss
+        
         # Backpropagation generator loss on generated samples
         scaler.scale(g_loss).backward()
         # update generator model weights
@@ -539,23 +520,26 @@ def train(
         # Initialize the discriminator model gradient
         d_model.zero_grad(set_to_none=True)
 
-        # Calculate the classification score of the discriminator model on real samples
+        # Calculate the classification score of the discriminator model for real samples
         with amp.autocast():
             gt_output = d_model(gt)
-            d_loss_gt = adversarial_criterion(gt_output, real_label)
+            sr_output = d_model(sr.detach().clone())
+            d_loss_gt = adversarial_criterion(gt_output - torch.mean(sr_output), real_label) * 0.5
+        # Call the gradient scaling function in the mixed precision API to
+        # back-propagate the gradient information of the fake samples
+        scaler.scale(d_loss_gt).backward(retain_graph=True)
 
-        # backpropagate discriminator's loss on real samples
-        scaler.scale(d_loss_gt).backward()
-
-        # Calculate the classification score of the generated samples by the discriminator model
+        # Calculate the classification score of the discriminator model for fake samples
         with amp.autocast():
             sr_output = d_model(sr.detach().clone())
-            d_loss_sr = adversarial_criterion(sr_output, fake_label)
-        # backpropagate discriminator loss on generated samples
+            d_loss_sr = adversarial_criterion(sr_output - torch.mean(gt_output), fake_label) * 0.5
+        # Call the gradient scaling function in the mixed precision API to
+        # back-propagate the gradient information of the fake samples
         scaler.scale(d_loss_sr).backward()
 
-        # Compute the discriminator total loss value
+        # Calculate the total discriminator loss value
         d_loss = d_loss_gt + d_loss_sr
+
         # Update discriminator model weights
         scaler.step(d_optimizer)
         scaler.update()
@@ -573,22 +557,8 @@ def train(
         batch_time.update(time.time() - end)
         end = time.time()
 
-        # Accumulate the values of each batch of data
-        total_d_loss += d_loss.item()
-        total_d_loss_gt += d_loss_gt.item()
-        total_d_loss_sr += d_loss_sr.item()
-        total_g_loss += g_loss.item()
-        total_pixel_loss += pixel_loss.item()
-        total_feature_loss += feature_loss.item()
-        total_adversarial_loss += adversarial_loss.item()
-        total_gt_probability += torch.sigmoid_(torch.mean(gt_output.detach())).item()
-        total_sr_probability += torch.sigmoid_(torch.mean(sr_output.detach())).item()
-        if physics:
-            total_physics_inner_loss += physics_inner_loss.item()
-            total_physics_boundary_loss += physics_boundary_loss.item()
-
         # Output training log information once
-        if config["TRAIN"]["PRINT_PER_BATCH"] and (batch_index % config["TRAIN"]["PRINT_BATCH_FREQ"] == 0):
+        if batch_index % config["TRAIN"]["PRINT_FREQ"] == 0:
             # write training log
             iters = batch_index + epoch * batches
             writer.add_scalar("Train/D_Loss", d_loss.item(), iters)
@@ -596,15 +566,13 @@ def train(
             writer.add_scalar("Train/D(SR)_Loss", d_loss_sr.item(), iters)
             writer.add_scalar("Train/G_Loss", g_loss.item(), iters)
             writer.add_scalar("Train/Pixel_Loss", pixel_loss.item(), iters)
-            writer.add_scalar("Train/Feature_Loss", feature_loss.item(), iters)
+            writer.add_scalar("Train/Content_Loss", content_loss.item(), iters)
             writer.add_scalar("Train/Adversarial_Loss", adversarial_loss.item(), iters)
-            writer.add_scalar("Train/Physics_Inner_Loss", physics_inner_loss.item(), iters)
-            writer.add_scalar("Train/Physics_Boundary_Loss", physics_boundary_loss.item(), iters)
+            if physics:
+                writer.add_scalar("Train/Physics_Inner_Loss", physics_inner_loss.item(), iters)
+                writer.add_scalar("Train/Physics_Boundary_Loss", physics_boundary_loss.item(), iters)
             writer.add_scalar("Train/D(GT)_Probability", torch.sigmoid_(torch.mean(gt_output.detach())).item(), iters)
             writer.add_scalar("Train/D(SR)_Probability", torch.sigmoid_(torch.mean(sr_output.detach())).item(), iters)
-            
-        if batch_index % config["TRAIN"]["PRINT_BATCH_FREQ"] == 0:
-            # Output training log information per print_batch_freq batches
             progress.display(batch_index)
 
         # Preload the next batch of data
@@ -612,33 +580,7 @@ def train(
 
         # After training a batch of data, add 1 to the number of data batches to ensure that the terminal prints data normally
         batch_index += 1
-    
-    # Calculate the average values of the current epoch
-    avg_d_loss = total_d_loss / batches
-    avg_d_loss_gt = total_d_loss_gt / batches
-    avg_d_loss_sr = total_d_loss_sr / batches
-    avg_g_loss = total_g_loss / batches
-    avg_pixel_loss = total_pixel_loss / batches
-    avg_feature_loss = total_feature_loss / batches
-    avg_adversarial_loss = total_adversarial_loss / batches
-    avg_physics_inner_loss = total_physics_inner_loss / batches
-    avg_physics_boundary_loss = total_physics_boundary_loss / batches
-    avg_gt_probability = total_gt_probability / batches
-    avg_sr_probability = total_sr_probability / batches
 
-    if not config["TRAIN"]["PRINT_PER_BATCH"]:
-        # write training log per epoch
-        writer.add_scalar("Train/D_Loss", avg_d_loss, epoch + 1)
-        writer.add_scalar("Train/D(GT)_Loss", avg_d_loss_gt, epoch + 1)
-        writer.add_scalar("Train/D(SR)_Loss", avg_d_loss_sr, epoch + 1)
-        writer.add_scalar("Train/G_Loss", avg_g_loss, epoch + 1)
-        writer.add_scalar("Train/Pixel_Loss", avg_pixel_loss, epoch + 1)
-        writer.add_scalar("Train/Feature_Loss", avg_feature_loss, epoch + 1)
-        writer.add_scalar("Train/Adversarial_Loss", avg_adversarial_loss, epoch + 1)
-        writer.add_scalar("Train/Physics_Inner_Loss", avg_physics_inner_loss, epoch + 1)
-        writer.add_scalar("Train/Physics_Boundary_Loss", avg_physics_boundary_loss, epoch + 1)
-        writer.add_scalar("Train/D(GT)_Probability", avg_gt_probability, epoch + 1)
-        writer.add_scalar("Train/D(SR)_Probability", avg_sr_probability, epoch + 1)
 
 if __name__ == "__main__":
     main()

@@ -33,10 +33,9 @@ feature_extractor_net_cfgs: Dict[str, List[Union[str, int]]] = {
 }
 
 
-def _make_layers(net_cfg_name: str, batch_norm: bool = False) -> nn.Sequential:
+def _make_layers(net_cfg_name: str, batch_norm: bool = False, in_channels: int = 1) -> nn.Sequential:
     net_cfg = feature_extractor_net_cfgs[net_cfg_name]
     layers: nn.Sequential[nn.Module] = nn.Sequential()
-    in_channels = 3
     for v in net_cfg:
         if v == "M":
             layers.append(nn.MaxPool2d((2, 2), (2, 2)))
@@ -60,9 +59,10 @@ class _FeatureExtractor(nn.Module):
             self,
             net_cfg_name: str = "vgg19",
             batch_norm: bool = False,
-            num_classes: int = 1000) -> None:
+            num_classes: int = 1000,
+            in_channels: int = 3) -> None:
         super(_FeatureExtractor, self).__init__()
-        self.features = _make_layers(net_cfg_name, batch_norm)
+        self.features = _make_layers(net_cfg_name, batch_norm, in_channels)
 
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
 
@@ -308,7 +308,8 @@ class DiscriminatorForVGG(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(int(8 * channels) * 4 * 4, 100),
+            # nn.Linear(int(8 * channels) * 4 * 4, 100),
+            nn.Linear(int(8 * channels) * 2 * 2, 100), # for our image size
             nn.LeakyReLU(0.2, True),
             nn.Linear(100, out_channels)
         )
@@ -341,12 +342,22 @@ class ContentLoss(nn.Module):
             feature_nodes: list = None,
             feature_normalize_mean: list = None,
             feature_normalize_std: list = None,
+            in_channels: int = 1
     ) -> None:
         super(ContentLoss, self).__init__()
         # Define the feature extraction model
-        model = _FeatureExtractor(net_cfg_name, batch_norm, num_classes)
+        model = _FeatureExtractor(net_cfg_name, batch_norm, num_classes, in_channels)
         # Load the pre-trained model
-        if model_weights_path == "":
+        if model_weights_path == "one-channel":
+            model = models.vgg19()
+            # Modify the input channel of the model
+            model.features[0] = torch.nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            # load and modify state_dict
+            state_dict = torch.utils.model_zoo.load_url('https://download.pytorch.org/models/vgg19-dcbb9e9d.pth')
+            state_dict['features.0.weight'] = state_dict['features.0.weight'].sum(dim=1, keepdim=True)
+            model.load_state_dict(state_dict)
+
+        elif model_weights_path == "":
             model = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1)
         elif model_weights_path is not None and os.path.exists(model_weights_path):
             checkpoint = torch.load(model_weights_path, map_location=lambda storage, loc: storage)
@@ -367,7 +378,7 @@ class ContentLoss(nn.Module):
             model_parameters.requires_grad = False
         self.feature_extractor.eval()
 
-    def forward(self, sr_tensor: Tensor, gt_tensor: Tensor) -> [Tensor]:
+    def forward(self, sr_tensor: Tensor, gt_tensor: Tensor) -> list[Tensor]:
         assert sr_tensor.size() == gt_tensor.size(), "Two tensor must have the same size"
         device = sr_tensor.device
 

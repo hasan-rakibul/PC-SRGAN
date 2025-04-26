@@ -37,7 +37,6 @@ feature_extractor_net_cfgs: Dict[str, List[Union[str, int]]] = {
 def _make_layers(net_cfg_name: str, batch_norm: bool = False, in_channels: int = 1) -> nn.Sequential:
     net_cfg = feature_extractor_net_cfgs[net_cfg_name]
     layers: nn.Sequential[nn.Module] = nn.Sequential()
-    in_channels = in_channels
     for v in net_cfg:
         if v == "M":
             layers.append(nn.MaxPool2d((2, 2), (2, 2)))
