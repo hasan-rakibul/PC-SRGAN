@@ -29,13 +29,13 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import ESRGAN_model
+from test_esrgan_or_rrdb import test
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "src"))
 
 from physics import PhysicsLossImageBoundary, PhysicsLossInnerImageAllenCahn, PhysicsLossInnerImageEriksonJohnson, H1Error
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset, FEMPhyDataset
-from SRGAN_test import test
 from SRGAN_utils import load_resume_state_dict, load_pretrained_state_dict, make_directory, save_checkpoint, \
     Summary, AverageMeter, ProgressMeter
 
