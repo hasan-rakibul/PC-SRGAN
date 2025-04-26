@@ -235,7 +235,7 @@ def main():
 def load_dataset(
         config: Any,
         device: torch.device,
-) -> list[CUDAPrefetcher, CUDAPrefetcher]:
+) -> tuple[CUDAPrefetcher, CUDAPrefetcher]:
     # Load the train dataset
 
     degenerated_train_datasets = FEMPhyDataset(
@@ -283,7 +283,7 @@ def load_dataset(
 def build_model(
         config: Any,
         device: torch.device,
-) -> list[nn.Module, nn.Module | Any, nn.Module]:
+) -> tuple[nn.Module, nn.Module | Any, nn.Module]:
     g_model = ESRGAN_model.__dict__[config["MODEL"]["G"]["NAME"]](in_channels=config["MODEL"]["G"]["IN_CHANNELS"],
                                                            out_channels=config["MODEL"]["G"]["OUT_CHANNELS"],
                                                            channels=config["MODEL"]["G"]["CHANNELS"],
@@ -316,7 +316,7 @@ def build_model(
     return g_model, ema_g_model, d_model
 
 
-def define_loss(config: Any, device: torch.device) -> list[nn.L1Loss, ESRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, PhysicsLossInnerImageAllenCahn, PhysicsLossImageBoundary]:
+def define_loss(config: Any, device: torch.device) -> tuple[nn.L1Loss, ESRGAN_model.ContentLoss, nn.BCEWithLogitsLoss, PhysicsLossInnerImageAllenCahn, PhysicsLossImageBoundary]:
     if config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["NAME"] == "L1Loss":
         pixel_criterion = nn.L1Loss()
     else:
@@ -357,7 +357,7 @@ def define_loss(config: Any, device: torch.device) -> list[nn.L1Loss, ESRGAN_mod
     return pixel_criterion, feature_criterion, adversarial_criterion, physics_inner_criterion, physics_boundary_criterion
 
 
-def define_optimizer(g_model: nn.Module, d_model: nn.Module, config: Any) -> list[optim.Adam, optim.Adam]:
+def define_optimizer(g_model: nn.Module, d_model: nn.Module, config: Any) -> tuple[optim.Adam, optim.Adam]:
     if config["TRAIN"]["OPTIM"]["NAME"] == "Adam":
         g_optimizer = optim.Adam(g_model.parameters(),
                                  config["TRAIN"]["OPTIM"]["LR"],
@@ -376,7 +376,7 @@ def define_optimizer(g_model: nn.Module, d_model: nn.Module, config: Any) -> lis
     return g_optimizer, d_optimizer
 
 
-def define_scheduler(g_optimizer: optim.Adam, d_optimizer: optim.Adam, config: Any) -> list[lr_scheduler.MultiStepLR, lr_scheduler.MultiStepLR]:
+def define_scheduler(g_optimizer: optim.Adam, d_optimizer: optim.Adam, config: Any) -> tuple[lr_scheduler.MultiStepLR, lr_scheduler.MultiStepLR]:
     if config["TRAIN"]["LR_SCHEDULER"]["NAME"] == "MultiStepLR":
         g_scheduler = lr_scheduler.MultiStepLR(g_optimizer,
                                                config["TRAIN"]["LR_SCHEDULER"]["MILESTONES"],

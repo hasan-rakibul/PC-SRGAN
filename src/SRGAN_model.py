@@ -358,7 +358,7 @@ class ContentLoss(nn.Module):
             model_parameters.requires_grad = False
         self.feature_extractor.eval()
 
-    def forward(self, sr_tensor: Tensor, gt_tensor: Tensor) -> [Tensor]:
+    def forward(self, sr_tensor: Tensor, gt_tensor: Tensor) -> Tensor:
         assert sr_tensor.size() == gt_tensor.size(), "Two tensor must have the same size"
         device = sr_tensor.device
 

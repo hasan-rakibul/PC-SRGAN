@@ -191,7 +191,7 @@ def main():
 def load_dataset(
         config: Any,
         device: torch.device,
-) -> list[CUDAPrefetcher, CUDAPrefetcher]:
+) -> tuple[CUDAPrefetcher, CUDAPrefetcher]:
     # Load the train dataset
    
     degenerated_train_datasets = FEMPhyDataset(
@@ -237,7 +237,7 @@ def load_dataset(
 def build_model(
         config: Any,
         device: torch.device,
-) -> list[nn.Module, nn.Module | Any]:
+) -> tuple[nn.Module, nn.Module | Any]:
     g_model = ESRGAN_model.__dict__[config["MODEL"]["G"]["NAME"]](in_channels=config["MODEL"]["G"]["IN_CHANNELS"],
                                                            out_channels=config["MODEL"]["G"]["OUT_CHANNELS"],
                                                            channels=config["MODEL"]["G"]["CHANNELS"],
@@ -262,7 +262,7 @@ def build_model(
 
     return g_model, ema_g_model
 
-def define_loss(config: Any, device: torch.device) -> list[nn.L1Loss, PhysicsLossInnerImageAllenCahn, PhysicsLossImageBoundary]:
+def define_loss(config: Any, device: torch.device) -> tuple[nn.L1Loss, PhysicsLossInnerImageAllenCahn, PhysicsLossImageBoundary]:
     if config["TRAIN"]["LOSSES"]["PIXEL_LOSS"]["NAME"] == "L1Loss":
         pixel_criterion = nn.L1Loss()
     else:
