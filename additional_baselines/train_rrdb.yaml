@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_No-Physics_RRDB
+EXP_NAME: Allen-Cahn_Periodic_No-Physics_RRDB-Pretrain
 
 ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
 
@@ -48,7 +48,7 @@ TRAIN:
 
   # training hyperparameters
   HYP:
-    EPOCHS: 100
+    EPOCHS: 120 # not found in the paper, but being consistent with ESRGAN
     IMGS_PER_BATCH: 16
     SHUFFLE: True
     NUM_WORKERS: 1
@@ -57,21 +57,21 @@ TRAIN:
 
   OPTIM:
     NAME: Adam
-    LR: 0.0001
+    LR: 0.0002
     BETAS: [ 0.9, 0.999 ]
     EPS: 0.0001
     WEIGHT_DECAY: 0.0
 
   LR_SCHEDULER:
-    NAME: MultiStepLR
-    MILESTONES: [ 16, 32, 64, 104 ]
+    NAME: StepLR
+    STEP_SIZE: 60 # 2e5 iters
     GAMMA: 0.5
 
   # Loss function
   LOSSES:
     PIXEL_LOSS:
       NAME: L1Loss
-      WEIGHT: [ 0.01 ]
+      WEIGHT: [ 1.0 ]
     PHYSICS_LOSS:
       INNER_WEIGHT: [ 0 ]
       TIME_INTEGRATOR: BDF # doesn't matter as the weight is 0

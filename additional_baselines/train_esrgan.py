@@ -376,7 +376,7 @@ def define_optimizer(g_model: nn.Module, d_model: nn.Module, config: Any) -> lis
     return g_optimizer, d_optimizer
 
 
-def define_scheduler(g_optimizer: optim.Adam, d_optimizer: optim.Adam, config: Any) -> [lr_scheduler.MultiStepLR, lr_scheduler.MultiStepLR]:
+def define_scheduler(g_optimizer: optim.Adam, d_optimizer: optim.Adam, config: Any) -> list[lr_scheduler.MultiStepLR, lr_scheduler.MultiStepLR]:
     if config["TRAIN"]["LR_SCHEDULER"]["NAME"] == "MultiStepLR":
         g_scheduler = lr_scheduler.MultiStepLR(g_optimizer,
                                                config["TRAIN"]["LR_SCHEDULER"]["MILESTONES"],

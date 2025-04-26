@@ -98,7 +98,7 @@ def main():
                                              config["TRAIN"]["CHECKPOINT"]["PRETRAINED_G_MODEL"])
         print(f"Loaded `{config['TRAIN']['CHECKPOINT']['PRETRAINED_G_MODEL']}` pretrained model weights successfully.")
     else:
-        print("Pretrained g model weights not found.")
+        print("Pretrained model weights not found.")
 
     # Load the last training interruption model node
     if config["TRAIN"]["CHECKPOINT"]["RESUMED_G_MODEL"]:
@@ -176,7 +176,7 @@ def main():
                          "state_dict": g_model.state_dict(),
                          "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
                          "optimizer": optimizer.state_dict(),
-                         "scheduler": scheduler.state_dict()},
+                         "scheduler": scheduler.state_dict() if scheduler is not None else None},
                         f"g_epoch_{epoch + 1}.pth.tar",
                         samples_dir,
                         results_dir,
@@ -329,7 +329,7 @@ def train(
     # The information printed by the progress bar
     batch_time = AverageMeter("Time", ":6.3f", Summary.SUM) # Summary.** controls what prints at the end of each test cycle
     data_time = AverageMeter("Data", ":6.3f", Summary.NONE)
-    losses = AverageMeter("G Loss", ":6.6f", Summary.NONE)
+    losses = AverageMeter("Loss", ":6.6f", Summary.NONE)
     progress = ProgressMeter(batches,
                              [batch_time, data_time, losses],
                              prefix=f"Epoch: [{epoch + 1}]")
@@ -441,8 +441,9 @@ def train(
             iters = batch_index + epoch * batches
             writer.add_scalar("Train/G_Loss", g_loss.item(), iters)
             writer.add_scalar("Train/Pixel_Loss", pixel_loss.item(), iters)
-            writer.add_scalar("Train/Physics_Inner_Loss", physics_inner_loss.item(), iters)
-            writer.add_scalar("Train/Physics_Boundary_Loss", physics_boundary_loss.item(), iters)
+            if physics:
+                writer.add_scalar("Train/Physics_Inner_Loss", physics_inner_loss.item(), iters)
+                writer.add_scalar("Train/Physics_Boundary_Loss", physics_boundary_loss.item(), iters)
             
         if batch_index % config["TRAIN"]["PRINT_BATCH_FREQ"] == 0:
             # Output training log information per print_batch_freq batches
@@ -464,8 +465,9 @@ def train(
         # write training log per epoch
         writer.add_scalar("Train/G_Loss", avg_g_loss, epoch + 1)
         writer.add_scalar("Train/Pixel_Loss", avg_pixel_loss, epoch + 1)
-        writer.add_scalar("Train/Physics_Inner_Loss", avg_physics_inner_loss, epoch + 1)
-        writer.add_scalar("Train/Physics_Boundary_Loss", avg_physics_boundary_loss, epoch + 1)
+        if physics:
+            writer.add_scalar("Train/Physics_Inner_Loss", avg_physics_inner_loss, epoch + 1)
+            writer.add_scalar("Train/Physics_Boundary_Loss", avg_physics_boundary_loss, epoch + 1)
 
 if __name__ == "__main__":
     main()

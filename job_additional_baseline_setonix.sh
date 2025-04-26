@@ -11,9 +11,9 @@
 module load pytorch/2.2.0-rocm5.7.3
 
 ################## Train RRDB - i.e., Pretraining for ESRGAN ##################
-# singularity exec $SINGULARITY_CONTAINER bash -c "\
-# source .venv/bin/activate && \
-# python additional_baselines/train_rrdb.py"
+singularity exec $SINGULARITY_CONTAINER bash -c "\
+source .venv/bin/activate && \
+python additional_baselines/train_rrdb.py"
 
 
 #@@@@@@@@@@@@@@@ Test RRDB - make sure to set the correct (pre-determined, if doing train-test at one go) 
@@ -24,6 +24,6 @@ module load pytorch/2.2.0-rocm5.7.3
 
 
 ################## Train ESRGAN ##################
-singularity exec $SINGULARITY_CONTAINER bash -c "\
-source .venv/bin/activate && \
-python additional_baselines/train_esrgan.py"
+# singularity exec $SINGULARITY_CONTAINER bash -c "\
+# source .venv/bin/activate && \
+# python additional_baselines/train_esrgan.py"
