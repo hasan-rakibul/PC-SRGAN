@@ -1,0 +1,123 @@
+# Based on https://github.com/Lornatang/SRGAN-PyTorch
+# =========================================================
+
+# experiment name
+EXP_NAME: Allen-Cahn_Periodic_Physics_ESRGAN
+
+ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
+
+# random number seed
+SEED: 0
+# super resolution magnification factor
+SCALE: 8
+# run device model
+DEVICE_ID: 0
+
+# default: inductor, which may be better, but it is not supported by the P100 GPU in Bracewell
+BACKEND: eager
+# BACKEND: aot_eager
+# BACKEND: inductor
+
+# Model define
+MODEL:
+  EMA:
+    ENABLE: True
+    DECAY: 0.999
+    COMPILED: True
+  G:
+    NAME: rrdbnet_x8
+    IN_CHANNELS: 1
+    OUT_CHANNELS: 1
+    CHANNELS: 64
+    GROWTH_CHANNELS: 32
+    NUM_RRDB: 23
+    COMPILED: True
+  D:
+    NAME: discriminator_for_vgg
+    IN_CHANNELS: 1
+    OUT_CHANNELS: 1
+    CHANNELS: 64
+    COMPILED: False
+
+TRAIN:
+  DATASET:
+    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_7
+    GT_IMAGE_SIZE: 64
+    HAS_SUBFOLDER: True
+    INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic/index-val-mapping.csv
+
+  # Model file address, used for pre-training and recovery training
+  CHECKPOINT:
+    PRETRAINED_G_MODEL: "results/Allen-Cahn_Periodic_No-Physics_RRDB/g_best.pth.tar"
+    PRETRAINED_D_MODEL: ""
+    RESUMED_G_MODEL: "./samples/Allen-Cahn_Periodic_Physics_ESRGAN/g_epoch_36.pth.tar"
+    RESUMED_D_MODEL: "./samples/Allen-Cahn_Periodic_Physics_ESRGAN/d_epoch_36.pth.tar"
+
+  # training hyperparameters
+  HYP:
+    EPOCHS: 120 # 400,000 iters / 3370 batches
+    IMGS_PER_BATCH: 16
+    SHUFFLE: True
+    NUM_WORKERS: 1
+    PIN_MEMORY: True
+    PERSISTENT_WORKERS: True
+
+  OPTIM:
+    NAME: Adam
+    LR: 0.0001
+    BETAS: [ 0.9, 0.999 ]
+    EPS: 0.0001
+    WEIGHT_DECAY: 0.0
+
+  LR_SCHEDULER:
+    NAME: MultiStepLR
+    MILESTONES: [ 15, 30, 60, 90 ] # [50k, 100k, 200k, 300k] steps
+    GAMMA: 0.5
+
+  # Loss function
+  LOSSES:
+    PIXEL_LOSS:
+      NAME: L1Loss
+      WEIGHT: [ 0.01 ]
+    CONTENT_LOSS:
+      NAME: ContentLoss
+      NET_CFG_NAME: "vgg19"
+      BATCH_NORM: False
+      NUM_CLASSES: 2
+      MODEL_WEIGHTS_PATH: "one-channel" # means load and modify the weights
+      FEATURE_NODES: [ "features.34" ]
+      FEATURE_NORMALIZE_MEAN: [0.485]
+      FEATURE_NORMALIZE_STD: [0.229]
+      WEIGHT: [ 1.0 ]
+      IN_CHANNELS: 3
+    ADVERSARIAL_LOSS:
+      NAME: vanilla
+      WEIGHT: [ 0.005 ]
+    PHYSICS_LOSS:
+      INNER_WEIGHT: [ 0.00000001 ]
+      TIME_INTEGRATOR: BDF
+      BOUNDARY_WEIGHT: [ 5 ]
+      BOUNDARY_TYPE: Periodic
+
+  PRINT_FREQ: 100
+
+TEST:
+  DATASET:
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_7
+    HAS_SUBFOLDER: True
+
+  # Test hyperparameters
+  HYP:
+    IMGS_PER_BATCH: 1 # should be always 1 as the metrics can't handle batched data
+    SHUFFLE: False
+    NUM_WORKERS: 1
+    PIN_MEMORY: True
+    PERSISTENT_WORKERS: True
+
+  # SAVE_IMAGE_DIR: ./results/validation/
+  SAVE_IMAGE_DIR: ""
+
+  # saving the difference between the ground truth and the prediction
+  SAVE_IMAGE_DIFF_DIR: ""
