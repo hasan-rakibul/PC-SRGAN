@@ -44,7 +44,7 @@ TRAIN:
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
     PRETRAINED_G_MODEL: ""
-    RESUMED_G_MODEL: "./samples/Allen-Cahn_Periodic_Physics_RRDB/g_epoch_44.pth.tar" 
+    RESUMED_G_MODEL: "./samples/Allen-Cahn_Periodic_Physics_RRDB/g_epoch_41.pth.tar" 
 
   # training hyperparameters
   HYP:

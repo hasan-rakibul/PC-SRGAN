@@ -206,7 +206,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path",
                         type=str,
-                        default="./additional_baselines/test_esrgan_or_rrdb.yaml",
+                        default="./additional_baselines/configs/test_esrgan_or_rrdb.yaml",
                         help="Path to test config file.")
     args = parser.parse_args()
 

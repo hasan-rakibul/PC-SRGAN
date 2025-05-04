@@ -193,6 +193,10 @@ class RRDBNet(nn.Module):
         x = self.conv3(x)
         x = self.conv4(x)
 
+        # To ensure numerial stability with loss calculation for Allen Cahn solution
+        eps = 1e-2
+        x = torch.clamp(x, -1.0+eps, 1.0-eps)
+
         return x
 
     def forward(self, x: Tensor) -> Tensor:
