@@ -172,7 +172,7 @@ def main():
         g_scheduler.step()
         d_scheduler.step()
 
-        psnr, ssim, mse, h1, lpips = test(g_model,
+        psnr, ssim, mse, h1, lpips_score = test(g_model,
                           paired_test_data_prefetcher,
                           psnr_model,
                           ssim_model,
@@ -188,7 +188,7 @@ def main():
         writer.add_scalar(f"Test/SSIM", ssim, epoch + 1)
         writer.add_scalar(f"Test/MSE", mse, epoch + 1)
         writer.add_scalar(f"Test/H1", h1, epoch + 1)
-        writer.add_scalar(f"Test/LPIPS", lpips, epoch + 1)
+        writer.add_scalar(f"Test/LPIPS", lpips_score, epoch + 1)
 
         # Automatically save model weights
         is_best = psnr > best_psnr and ssim > best_ssim
@@ -197,7 +197,7 @@ def main():
         best_ssim = max(ssim, best_ssim)
         best_mse = min(mse, best_mse)
         best_h1 = min(h1, best_h1)
-        best_lpips = min(lpips, best_lpips)
+        best_lpips = min(lpips_score, best_lpips)
         save_checkpoint({
             "epoch": epoch + 1,
             "psnr": psnr,

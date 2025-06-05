@@ -11,9 +11,9 @@
 module load pytorch/2.2.0-rocm5.7.3
 
 ################## Train SRGAN (Physics) ##################
-# singularity exec $SINGULARITY_CONTAINER bash -c "\
-# source .venv/bin/activate && \
-# ./train_physics.sh Allen-Cahn_Periodic"
+singularity exec $SINGULARITY_CONTAINER bash -c "\
+source .venv/bin/activate && \
+./train_physics.sh Allen-Cahn_Periodic"
 
 
 # for testing, make sure to set the correct pre-determined path of the trained ckpt in the test config
@@ -24,6 +24,6 @@ module load pytorch/2.2.0-rocm5.7.3
 
 
 ################## Test SRGAN (No Physics) ##################
-singularity exec $SINGULARITY_CONTAINER bash -c "\
-source .venv/bin/activate && \
-./test_no-physics.sh Allen-Cahn_Periodic"
+# singularity exec $SINGULARITY_CONTAINER bash -c "\
+# source .venv/bin/activate && \
+# ./test_no-physics.sh Allen-Cahn_Periodic"

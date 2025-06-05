@@ -139,14 +139,14 @@ def test(
             ssim = ssim_model(sr, gt)
             mse = mse_model(sr, gt)
             h1 = h1_model(sr, gt)
-            lpips = lpips_model(sr, gt)
+            lpips_score = lpips_model(sr, gt)
 
             # the metrics' shapes are always [0], so not calculating the size. Default value of 1 is used from AverageMeter
             psnres.update(psnr.item())
             ssimes.update(ssim.item())
             mses.update(mse.item())
             h1s.update(h1.item())
-            lpipses.update(lpips.item())
+            lpipses.update(lpips_score.item())
 
             # Record the total time to verify a batch
             batch_time.update(time.time() - end)

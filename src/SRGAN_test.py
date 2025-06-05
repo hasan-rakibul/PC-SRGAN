@@ -141,7 +141,7 @@ def test(
             ssim = ssim_model(sr, gt)
             mse = mse_model(sr, gt)
             h1 = h1_model(sr, gt)
-            lpips = lpips_model(sr, gt)
+            lpips_score = lpips_model(sr, gt)
 
             # record current metrics
             # psnres.update(psnr.item(), sr.size(0))
@@ -153,7 +153,7 @@ def test(
             ssimes.update(ssim.item())
             mses.update(mse.item())
             h1s.update(h1.item())
-            lpipses.update(lpips.item())
+            lpipses.update(lpips_score.item())
 
             # Record the total time to verify a batch
             batch_time.update(time.time() - end)
