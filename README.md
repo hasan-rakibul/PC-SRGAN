@@ -66,6 +66,7 @@ Creat and activate a virtual environment.
 
 Install packages:
 ```bash
+python -m pip install -r requirements_torch.txt
 python -m pip install -r requirements.txt
 ```
 

@@ -28,6 +28,7 @@ from SRGAN_utils import load_pretrained_state_dict, AverageMeter, ProgressMeter,
 
 from torchmetrics.image import StructuralSimilarityIndexMeasure, PeakSignalNoiseRatio
 from torchmetrics.regression import MeanSquaredError
+import lpips
 
 from physics import H1Error
 
@@ -71,9 +72,10 @@ def test(
         ssim_model,
         mse_model,
         h1_model,
+        lpips_model,
         device: torch.device,
         config: Any,
-) -> tuple[float, float, float, float]:
+) -> tuple[float, float, float, float, float]:
     save_image = False
     save_image_dir = ""
 
@@ -107,8 +109,9 @@ def test(
     ssimes = AverageMeter("SSIM", ":4.4f", Summary.AVERAGE)
     mses = AverageMeter("MSE", ":4.4f", Summary.AVERAGE)
     h1s = AverageMeter("H1", ":4.4f", Summary.AVERAGE)
+    lpipses = AverageMeter("LPIPS", ":4.4f", Summary.AVERAGE)
     progress = ProgressMeter(len(test_data_prefetcher),
-                             [batch_time, psnres, ssimes, mses, h1s],
+                             [batch_time, psnres, ssimes, mses, h1s, lpipses],
                              prefix=f"Test: ")
 
     # set the model as validation model
@@ -138,6 +141,7 @@ def test(
             ssim = ssim_model(sr, gt)
             mse = mse_model(sr, gt)
             h1 = h1_model(sr, gt)
+            lpips = lpips_model(sr, gt)
 
             # record current metrics
             # psnres.update(psnr.item(), sr.size(0))
@@ -149,6 +153,7 @@ def test(
             ssimes.update(ssim.item())
             mses.update(mse.item())
             h1s.update(h1.item())
+            lpipses.update(lpips.item())
 
             # Record the total time to verify a batch
             batch_time.update(time.time() - end)
@@ -216,7 +221,7 @@ def test(
     # Print the performance index of the model at the current Epoch
     progress.display_summary()
 
-    return psnres.avg, ssimes.avg, mses.avg, h1s.avg
+    return psnres.avg, ssimes.avg, mses.avg, h1s.avg, lpipses.avg
 
 
 def main() -> None:
@@ -239,23 +244,25 @@ def main() -> None:
     ssim_model = StructuralSimilarityIndexMeasure(data_range=2.0).to(device)
     mse_model = MeanSquaredError().to(device)
     h1_model = H1Error().to(device)
+    lpips_model = lpips.LPIPS(net='alex').to(device) # https://github.com/richzhang/PerceptualSimilarity
 
     # Load model weights
     g_model = load_pretrained_state_dict(g_model, config["MODEL"]["G"]["COMPILED"], config["MODEL_WEIGHTS_PATH"])
 
-    psnr_avg, ssim_avg, mse_avg, h1_avg = test(g_model,
+    psnr_avg, ssim_avg, mse_avg, h1_avg, lpips_avg = test(g_model,
          test_data_prefetcher,
          psnr_model,
          ssim_model,
          mse_model,
          h1_model,
+         lpips_model,
          device,
          config)
     
     # append the results to a csv file
     csv_path = os.path.join('./results/', "all_test_results.csv")
     with open(csv_path, 'a') as f:
-        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg},{mse_avg},{h1_avg}\n")
+        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg},{mse_avg},{h1_avg},{lpips_avg}\n")
 
 
 if __name__ == "__main__":

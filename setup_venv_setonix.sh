@@ -12,5 +12,6 @@ singularity exec $SINGULARITY_CONTAINER bash -c "\
 python3 -m venv --system-site-package .venv && \
 source .venv/bin/activate && \
 python3 -m pip install --upgrade pip && \
+python3 -m pip install -r requirements.txt && \
 python3 -m pip install -r additional_baselines/requirements.txt && \
 echo 'Venv setup complete' "
