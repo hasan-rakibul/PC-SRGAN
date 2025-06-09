@@ -1,2 +1,3 @@
 fenics-ffc
 matplotlib
+vtk # required for converting raw vtk to npy
