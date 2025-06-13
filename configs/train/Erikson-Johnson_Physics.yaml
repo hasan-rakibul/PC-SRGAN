@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Erikson-Johnson_Physics
+EXP_NAME: Eriksson-Johnson_PC-SRGAN
 
 # if using Erikson_Johnson dataset, set to True
 ERIKSON_JOHNSON: True
@@ -43,11 +43,11 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/Erikson_Johnson/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/Erikson_Johnson/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Eriksson_Johnson/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: ./data/Eriksson_Johnson/train/mesh_7
     GT_IMAGE_SIZE: 64
     HAS_SUBFOLDER: True
-    INDEX_VAL_MAPPING: ./data/Erikson_Johnson/index-val-mapping.csv
+    INDEX_VAL_MAPPING: ./data/Eriksson_Johnson/index-val-mapping.csv
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:

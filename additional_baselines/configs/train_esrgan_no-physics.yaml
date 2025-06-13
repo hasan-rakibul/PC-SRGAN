@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_No-Physics_ESRGAN_NewPretrained
+EXP_NAME: Allen-Cahn_Periodic_ESRGAN
 
 ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
 
@@ -49,10 +49,10 @@ TRAIN:
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
-    PRETRAINED_G_MODEL: "./results/Allen-Cahn_Periodic_No-Physics_RRDB-Pretrain/g_last.pth.tar"
+    PRETRAINED_G_MODEL: "./results/Allen-Cahn_Periodic_RRDB-Pretrain/g_last.pth.tar"
     PRETRAINED_D_MODEL: ""
-    RESUMED_G_MODEL: "./samples/Allen-Cahn_Periodic_No-Physics_ESRGAN_NewPretrained/g_epoch_107.pth.tar"
-    RESUMED_D_MODEL: "./samples/Allen-Cahn_Periodic_No-Physics_ESRGAN_NewPretrained/d_epoch_107.pth.tar"
+    RESUMED_G_MODEL: ""
+    RESUMED_D_MODEL: ""
 
   # training hyperparameters
   HYP:

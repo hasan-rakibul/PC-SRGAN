@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Erikson-Johnson_Physics_ACTUAL_TEST_SET
+EXP_NAME: Eriksson-Johnson_PC-SRGAN
 # random number seed
 SEED: 0
 # Super resolution magnification factor
@@ -10,7 +10,7 @@ SCALE: 8
 # run device model
 DEVICE_ID: 0
 # Model weights path
-MODEL_WEIGHTS_PATH: ./results/Erikson-Johnson_Physics/g_best.pth.tar
+MODEL_WEIGHTS_PATH: ./results/Eriksson-Johnson_PC-SRGAN/g_best.pth.tar
 
 # Model define
 MODEL:
@@ -24,8 +24,8 @@ MODEL:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/Erikson_Johnson/test/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/Erikson_Johnson/test/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Eriksson_Johnson/test/mesh_63
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Eriksson_Johnson/test/mesh_7
     HAS_SUBFOLDER: True
 
   # Test hyperparameters

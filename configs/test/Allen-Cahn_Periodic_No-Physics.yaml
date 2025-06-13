@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen_Cahn_Periodic_No_Physics_ACTUAL_TEST_SET
+EXP_NAME: Allen-Cahn_Periodic_SRGAN
 # random number seed
 SEED: 0
 # Super resolution magnification factor
@@ -10,7 +10,7 @@ SCALE: 8
 # run device model
 DEVICE_ID: 0
 # Model weights path
-MODEL_WEIGHTS_PATH: ./results/Allen-Cahn_Periodic_No-Physics/g_best.pth.tar
+MODEL_WEIGHTS_PATH: ./results/Allen-Cahn_Periodic_SRGAN/g_best.pth.tar
 
 # Model define
 MODEL:
