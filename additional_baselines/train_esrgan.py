@@ -29,7 +29,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import ESRGAN_model
-from test_esrgan_or_rrdb import test
+from test_esrgan_or_rrdb import validation
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "src"))
@@ -41,7 +41,6 @@ from SRGAN_utils import load_resume_state_dict, load_pretrained_state_dict, make
 
 from torchmetrics.image import StructuralSimilarityIndexMeasure, PeakSignalNoiseRatio
 from torchmetrics.regression import MeanSquaredError
-import lpips
 
 def main():
     start_time = time.time()
@@ -80,7 +79,6 @@ def main():
     best_ssim = 0.0
     best_mse = 0.0
     best_h1 = 0.0
-    best_lpips = 0.0
 
     # Define the running device number
     device = torch.device("cuda", config["DEVICE_ID"])
@@ -138,8 +136,7 @@ def main():
     psnr_model = PeakSignalNoiseRatio(data_range=2.0).to(device)
     ssim_model = StructuralSimilarityIndexMeasure(data_range=2.0).to(device)
     mse_model = MeanSquaredError().to(device)   
-    h1_model = H1Error().to(device)
-    lpips_model = lpips.LPIPS(net='alex').to(device) # https://github.com/richzhang/PerceptualSimilarity
+    h1_model = H1Error().to(device) 
 
     # Create the folder where the model weights are saved
     samples_dir = os.path.join("samples", config["EXP_NAME"])
@@ -172,13 +169,12 @@ def main():
         g_scheduler.step()
         d_scheduler.step()
 
-        psnr, ssim, mse, h1, lpips_score = test(g_model,
+        psnr, ssim, mse, h1 = validation(g_model,
                           paired_test_data_prefetcher,
                           psnr_model,
                           ssim_model,
                           mse_model,
                           h1_model,
-                          lpips_model,
                           device,
                           config)
         print("\n")
@@ -188,7 +184,6 @@ def main():
         writer.add_scalar(f"Test/SSIM", ssim, epoch + 1)
         writer.add_scalar(f"Test/MSE", mse, epoch + 1)
         writer.add_scalar(f"Test/H1", h1, epoch + 1)
-        writer.add_scalar(f"Test/LPIPS", lpips_score, epoch + 1)
 
         # Automatically save model weights
         is_best = psnr > best_psnr and ssim > best_ssim
@@ -197,7 +192,6 @@ def main():
         best_ssim = max(ssim, best_ssim)
         best_mse = min(mse, best_mse)
         best_h1 = min(h1, best_h1)
-        best_lpips = min(lpips_score, best_lpips)
         save_checkpoint({
             "epoch": epoch + 1,
             "psnr": psnr,

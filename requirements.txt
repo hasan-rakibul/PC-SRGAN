@@ -5,4 +5,3 @@ typing>=3.7.4.3
 natsort>=8.4.0
 tensorboard
 packaging
-lpips # 0.1.4

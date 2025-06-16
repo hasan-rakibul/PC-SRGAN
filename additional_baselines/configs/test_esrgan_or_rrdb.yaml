@@ -2,8 +2,8 @@
 # =========================================================
 
 # experiment name
-# EXP_NAME: Allen-Cahn_Periodic_Physics_ESRGAN_NewPretrained
-EXP_NAME: Allen-Cahn_Periodic_No-Physics_ESRGAN_NewPretrained
+# EXP_NAME: Allen-Cahn_Periodic_Physics_ESRGAN
+EXP_NAME: Allen-Cahn_Periodic_ESRGAN
 
 ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
 
@@ -17,7 +17,7 @@ DEVICE_ID: 0
 BACKEND: eager
 
 # MODEL_WEIGHTS_PATH: ./results/Allen-Cahn_Periodic_Physics_ESRGAN_NewPretrained/g_best.pth.tar
-MODEL_WEIGHTS_PATH: ./results/Allen-Cahn_Periodic_No-Physics_ESRGAN_NewPretrained/g_best.pth.tar
+MODEL_WEIGHTS_PATH: ./results/Allen-Cahn_Periodic_ESRGAN/g_best.pth.tar
 
 # Model define
 MODEL:
