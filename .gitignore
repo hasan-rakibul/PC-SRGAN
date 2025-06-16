@@ -13,6 +13,8 @@ almost_unnecessary/
 *.out
 src/draft.ipynb
 
+.rclone.sh
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

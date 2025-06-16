@@ -1,9 +1,9 @@
 # include things we need
 + OTHERS/**
 + data/*.tar.gz
-+ "bash_logs/**"
-+ "results/all_test_results.csv"
-+ "samples/logs/**"
++ bash_logs/**
++ results/all_test_results.csv
++ samples/logs/**
 + .rclone.sh
 
 # exclue-everything

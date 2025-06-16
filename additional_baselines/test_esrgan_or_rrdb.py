@@ -30,7 +30,7 @@ from SRGAN_utils import load_pretrained_state_dict, AverageMeter, ProgressMeter,
 
 from torchmetrics.image import StructuralSimilarityIndexMeasure, PeakSignalNoiseRatio, VisualInformationFidelity
 from torchmetrics.regression import MeanSquaredError
-from torchmetrics.image.dists import DeepImageStructureAndTextureSimilarity
+from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
 from physics import H1Error
 
@@ -75,7 +75,7 @@ def test(
         ssim_model,
         mse_model,
         h1_model,
-        dists_model,
+        lpips_model,
         vif_model,
         device: torch.device,
         config: Any,
@@ -108,10 +108,10 @@ def test(
     ssimes = AverageMeter("SSIM", ":4.4f", Summary.AVERAGE)
     mses = AverageMeter("MSE", ":4.4f", Summary.AVERAGE)
     h1s = AverageMeter("H1", ":4.4f", Summary.AVERAGE)
-    distses = AverageMeter("DISTS", ":4.4f", Summary.AVERAGE)
+    lpipses = AverageMeter("LPIPS", ":4.4f", Summary.AVERAGE)
     vifs = AverageMeter("VIF", ":4.4f", Summary.AVERAGE)
     progress = ProgressMeter(len(test_data_prefetcher),
-                             [batch_time, psnres, ssimes, mses, h1s, distses, vifs],
+                             [batch_time, psnres, ssimes, mses, h1s, lpipses, vifs],
                              prefix=f"Test: ")
 
     # set the model as validation model
@@ -141,15 +141,19 @@ def test(
             ssim = ssim_model(sr, gt)
             mse = mse_model(sr, gt)
             h1 = h1_model(sr, gt)
-            dists = dists_model(sr, gt)
             vif = vif_model(sr, gt)
+
+            # LPIPS requires 3 channels, so we need to repeat the channel if it is single channel
+            sr_3ch = sr.repeat(1, 3, 1, 1) if sr.shape[1] == 1 else sr
+            gt_3ch = gt.repeat(1, 3, 1, 1) if gt.shape[1] == 1 else gt
+            lpips = lpips_model(sr_3ch, gt_3ch)
 
             # the metrics' shapes are always [0], so not calculating the size. Default value of 1 is used from AverageMeter
             psnres.update(psnr.item())
             ssimes.update(ssim.item())
             mses.update(mse.item())
             h1s.update(h1.item())
-            distses.update(dists.item())
+            lpipses.update(lpips.item())
             vifs.update(vif.item())
 
             # Record the total time to verify a batch
@@ -206,7 +210,7 @@ def test(
     # Print the performance index of the model at the current Epoch
     progress.display_summary()
 
-    return psnres.avg, ssimes.avg, mses.avg, h1s.avg, distses.avg, vif.avg
+    return psnres.avg, ssimes.avg, mses.avg, h1s.avg, lpipses.avg, vifs.avg
 
 def validation(
         g_model: nn.Module,
@@ -360,19 +364,19 @@ def main() -> None:
     ssim_model = StructuralSimilarityIndexMeasure(data_range=2.0).to(device)
     mse_model = MeanSquaredError().to(device)
     h1_model = H1Error().to(device)
-    dists_model = DeepImageStructureAndTextureSimilarity().to(device)
+    lpips_model = LearnedPerceptualImagePatchSimilarity().to(device)
     vif_model = VisualInformationFidelity().to(device)
 
     # Load model weights
     g_model = load_pretrained_state_dict(g_model, config["MODEL"]["G"]["COMPILED"], config["MODEL_WEIGHTS_PATH"])
 
-    psnr_avg, ssim_avg, mse_avg, h1_avg, dists_avg, vif_avg = test(g_model,
+    psnr_avg, ssim_avg, mse_avg, h1_avg, lpips_avg, vif_avg = test(g_model,
          test_data_prefetcher,
          psnr_model,
          ssim_model,
          mse_model,
          h1_model,
-         dists_model,
+         lpips_model,
          vif_model,
          device,
          config)
@@ -380,7 +384,7 @@ def main() -> None:
     # append the results to a csv file
     csv_path = os.path.join('./results/', "all_test_results.csv")
     with open(csv_path, 'a') as f:
-        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg},{mse_avg},{h1_avg},{dists_avg},{vif_avg}\n")
+        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg},{mse_avg},{h1_avg},{lpips_avg},{vif_avg}\n")
 
 
 if __name__ == "__main__":

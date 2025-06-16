@@ -15,7 +15,7 @@ MODEL_WEIGHTS_PATH: ./results/Eriksson-Johnson_PC-SRGAN/g_best.pth.tar
 # Model define
 MODEL:
   G:
-    NAME: srresnet_x8
+    NAME: srresnet_x8_erikson_johnson
     IN_CHANNELS: 1
     OUT_CHANNELS: 1
     CHANNELS: 64
@@ -36,9 +36,9 @@ TEST:
     PIN_MEMORY: True
     PERSISTENT_WORKERS: True
 
-  SAVE_IMAGE_DIR: ./results/test/
-  # SAVE_IMAGE_DIR: ""
+  # SAVE_IMAGE_DIR: ./results/test/
+  SAVE_IMAGE_DIR: ""
 
   # saving the difference between the ground truth and the prediction
-  SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
-  # SAVE_IMAGE_DIFF_DIR: ""
+  # SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
+  SAVE_IMAGE_DIFF_DIR: ""
