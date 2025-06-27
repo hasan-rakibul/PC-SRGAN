@@ -2,14 +2,14 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_No-Physics_Subset100
+EXP_NAME: Allen-Cahn_Periodic_No-Physics_x4
 
 ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
 
 # random number seed
 SEED: 0
 # super resolution magnification factor
-SCALE: 8
+SCALE: 4
 # run device model
 DEVICE_ID: 0
 
@@ -25,7 +25,7 @@ MODEL:
     DECAY: 0.999
     COMPILED: True
   G:
-    NAME: srresnet_x8
+    NAME: srresnet_x4
     IN_CHANNELS: 1
     OUT_CHANNELS: 1
     CHANNELS: 64
@@ -42,8 +42,8 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset10/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: # empty means None, means downsample
     # TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_63
     # TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_7
     GT_IMAGE_SIZE: 64
@@ -52,7 +52,7 @@ TRAIN:
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
-    PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
+    PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x4-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
     RESUMED_D_MODEL: ""
@@ -111,7 +111,7 @@ TRAIN:
 TEST:
   DATASET:
     PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_7
+    PAIRED_TEST_LR_IMAGES_DIR: 
     HAS_SUBFOLDER: True
 
   # Test hyperparameters

@@ -9,6 +9,10 @@ if [[ $option = Allen-Cahn_Periodic ]]; then
     echo "Training Allen-Cahn Periodic No Physics"
     python src/SRGAN_train.py \
 --config_path ./configs/train/Allen-Cahn_Periodic_No-Physics.yaml >&1 | tee ./bash_logs/Allen_Cahn_Periodic_No-Physics_$(date +%y%m%d-%H%M).txt
+elif [[ $option = Allen-Cahn_Periodic_x4 ]]; then
+    echo "Training Allen-Cahn Periodic_x4 No Physics"
+    python src/SRGAN_train.py \
+--config_path ./configs/train/Allen-Cahn_Periodic_No-Physics_x4.yaml >&1 | tee ./bash_logs/Allen_Cahn_Periodic_No-Physics_x4_$(date +%y%m%d-%H%M).txt
 elif [[ $option = Allen-Cahn_Neumann ]]; then
     echo "Training Allen-Cahn Neumann No Physics"
     python src/SRGAN_train.py \

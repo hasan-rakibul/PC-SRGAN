@@ -2,14 +2,15 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_No-Physics_Subset100
+EXP_NAME: Allen-Cahn_Periodic_Physics_BDF_x4
 
-ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
+# if using Erikson_Johnson dataset, set to True
+ERIKSON_JOHNSON: False
 
 # random number seed
 SEED: 0
 # super resolution magnification factor
-SCALE: 8
+SCALE: 4
 # run device model
 DEVICE_ID: 0
 
@@ -25,7 +26,7 @@ MODEL:
     DECAY: 0.999
     COMPILED: True
   G:
-    NAME: srresnet_x8
+    NAME: srresnet_x4
     IN_CHANNELS: 1
     OUT_CHANNELS: 1
     CHANNELS: 64
@@ -42,8 +43,8 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset10/train/mesh_63
+    TRAIN_LR_IMAGES_DIR: # empty means None, means downsample
     # TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_63
     # TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_7
     GT_IMAGE_SIZE: 64
@@ -52,12 +53,12 @@ TRAIN:
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
-    PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x8-SRGAN_ImageNet.pth.tar
+    PRETRAINED_G_MODEL: ./results/pretrained_models/SRGAN_x4-SRGAN_ImageNet.pth.tar
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
     RESUMED_D_MODEL: ""
-    # RESUMED_G_MODEL: ./samples/Allen_Cahn_Periodic/g_epoch_71.pth.tar
-    # RESUMED_D_MODEL: ./samples/Allen_Cahn_Periodic/d_epoch_71.pth.tar
+    # RESUMED_G_MODEL: ./samples/Allen_Cahn_Periodic_Physics/g_epoch_16.pth.tar
+    # RESUMED_D_MODEL: ./samples/Allen_Cahn_Periodic_Physics/d_epoch_16.pth.tar
 
   # training hyperparameters
   HYP:
@@ -70,7 +71,7 @@ TRAIN:
 
   OPTIM:
     NAME: Adam
-    LR: 0.0001
+    LR: 0.001
     BETAS: [ 0.9, 0.999 ]
     EPS: 0.0001
     WEIGHT_DECAY: 0.0
@@ -100,10 +101,10 @@ TRAIN:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
     PHYSICS_LOSS:
-      INNER_WEIGHT: [ 0 ]
-      TIME_INTEGRATOR: BDF # doesn't matter as the weight is 0
-      BOUNDARY_WEIGHT: [ 0 ]
-      BOUNDARY_TYPE: Periodic # doesn't matter as the weight is 0
+      INNER_WEIGHT: [ 0.00000001 ]
+      TIME_INTEGRATOR: BDF # Options: BDF, CN, EE
+      BOUNDARY_WEIGHT: [ 5 ]
+      BOUNDARY_TYPE: Periodic # Options: Dirichlet, Periodic, Neumann
 
   PRINT_PER_BATCH: False
   PRINT_BATCH_FREQ: 100
@@ -111,12 +112,12 @@ TRAIN:
 TEST:
   DATASET:
     PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_7
+    PAIRED_TEST_LR_IMAGES_DIR: 
     HAS_SUBFOLDER: True
 
   # Test hyperparameters
   HYP:
-    IMGS_PER_BATCH: 1 # should be always 1 as the metrics can't handle batched data
+    IMGS_PER_BATCH: 1
     SHUFFLE: False
     NUM_WORKERS: 1
     PIN_MEMORY: True
@@ -124,6 +125,6 @@ TEST:
 
   # SAVE_IMAGE_DIR: ./results/validation/
   SAVE_IMAGE_DIR: ""
-
+  
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""

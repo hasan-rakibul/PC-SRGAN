@@ -6,6 +6,10 @@ if [[ $option = Allen-Cahn_Periodic ]]; then
     echo "Testing Allen-Cahn Periodic No Physics"
     python src/SRGAN_test.py \
 --config_path ./configs/test/Allen-Cahn_Periodic_No-Physics.yaml >&1 | tee ./bash_logs/Allen_Cahn_Periodic_No-Physics_Test_$(date +%y%m%d-%H%M).txt
+elif [[ $option = Allen-Cahn_Periodic_x4 ]]; then
+    echo "Testing Allen-Cahn Periodic No Physics_x4"
+    python src/SRGAN_test.py \
+--config_path ./configs/test/Allen-Cahn_Periodic_No-Physics_x4.yaml >&1 | tee ./bash_logs/Allen_Cahn_Periodic_No-Physics_x4_Test_$(date +%y%m%d-%H%M).txt
 elif [[ $option = Allen-Cahn_Neumann ]]; then
     echo "Testing Allen-Cahn Neumann No Physics"
     python src/SRGAN_test.py \

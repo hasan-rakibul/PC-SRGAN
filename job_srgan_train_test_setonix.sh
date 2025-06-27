@@ -15,6 +15,15 @@ module load pytorch/2.2.0-rocm5.7.3
 # source .venv/bin/activate && \
 # ./train_physics.sh Allen-Cahn_Periodic"
 
+##### PC-SRGAN_x4
+# singularity exec $SINGULARITY_CONTAINER bash -c "\
+# source .venv/bin/activate && \
+# ./train_physics.sh Allen-Cahn_Periodic_x4"
+
+##### SRGAN_x4
+# singularity exec $SINGULARITY_CONTAINER bash -c "\
+# source .venv/bin/activate && \
+# ./train_no-physics.sh Allen-Cahn_Periodic_x4"
 
 # for testing, make sure to set the correct pre-determined path of the trained ckpt in the test config
 ########3E PC-SRGANs##########33
@@ -22,6 +31,11 @@ module load pytorch/2.2.0-rocm5.7.3
 # singularity exec $SINGULARITY_CONTAINER bash -c "\
 # source .venv/bin/activate && \
 # ./test_physics.sh Allen-Cahn_Periodic"
+
+################## Test PC-SRGAN_x4 (Periodic) ##################
+# singularity exec $SINGULARITY_CONTAINER bash -c "\
+# source .venv/bin/activate && \
+# ./test_physics.sh Allen-Cahn_Periodic_x4"
 
 ################## Test PC-SRGAN (Neumann) ##################
 # singularity exec $SINGULARITY_CONTAINER bash -c "\
@@ -39,12 +53,17 @@ module load pytorch/2.2.0-rocm5.7.3
 # source .venv/bin/activate && \
 # ./test_no-physics.sh Allen-Cahn_Periodic"
 
+################## Test SRGAN_x4 (Periodic) ##################
+singularity exec $SINGULARITY_CONTAINER bash -c "\
+source .venv/bin/activate && \
+./test_no-physics.sh Allen-Cahn_Periodic_x4"
+
 ################## Test SRGAN (Neumann) ##################
 # singularity exec $SINGULARITY_CONTAINER bash -c "\
 # source .venv/bin/activate && \
 # ./test_no-physics.sh Allen-Cahn_Neumann"
 
 # ################## Test SRGAN (Eriksson-Johnson) ##################
-singularity exec $SINGULARITY_CONTAINER bash -c "\
-source .venv/bin/activate && \
-./test_no-physics.sh Erikson-Johnson"
+# singularity exec $SINGULARITY_CONTAINER bash -c "\
+# source .venv/bin/activate && \
+# ./test_no-physics.sh Erikson-Johnson"

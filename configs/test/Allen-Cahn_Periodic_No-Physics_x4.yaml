@@ -6,16 +6,16 @@ EXP_NAME: Allen-Cahn_Periodic_SRGAN_x4
 # random number seed
 SEED: 0
 # Super resolution magnification factor
-SCALE: 8
+SCALE: 4
 # run device model
 DEVICE_ID: 0
 # Model weights path
-MODEL_WEIGHTS_PATH: ./results/Allen-Cahn_Periodic_SRGAN/g_best.pth.tar
+MODEL_WEIGHTS_PATH: ./results/Allen-Cahn_Periodic_No-Physics_x4/g_best.pth.tar
 
 # Model define
 MODEL:
   G:
-    NAME: srresnet_x8
+    NAME: srresnet_x4
     IN_CHANNELS: 1
     OUT_CHANNELS: 1
     CHANNELS: 64
@@ -25,7 +25,7 @@ MODEL:
 TEST:
   DATASET:
     PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/test/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/test/mesh_7
+    PAIRED_TEST_LR_IMAGES_DIR: 
     HAS_SUBFOLDER: True
 
   # Test hyperparameters

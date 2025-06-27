@@ -240,6 +240,190 @@ def test(
 
     return psnres.avg, ssimes.avg, mses.avg, h1s.avg, lpipses.avg, vifs.avg
 
+def test_pseudo_x4(
+        g_model: nn.Module,
+        test_data_prefetcher: CUDAPrefetcher,
+        psnr_model,
+        ssim_model,
+        mse_model,
+        h1_model,
+        lpips_model,
+        vif_model,
+        device: torch.device,
+        config: Any,
+) -> tuple[float, float, float, float, float, float]:
+    import torchvision.transforms as transforms
+    resizer = transforms.Resize((32, 32))
+
+    save_image = False
+    save_image_dir = ""
+
+    save_image_diff = False
+    save_image_diff_dir = ""
+
+    is_data_range_plus_minus_one = True
+    if "Eriksson_Johnson" in config["TEST"]["DATASET"]["PAIRED_TEST_GT_IMAGES_DIR"]:
+        is_data_range_plus_minus_one = False
+
+    if config["TEST"]["SAVE_IMAGE_DIR"]:
+        save_image = True
+        save_image_dir = os.path.join(config["TEST"]["SAVE_IMAGE_DIR"], config["EXP_NAME"])
+
+    if config["TEST"]["SAVE_IMAGE_DIFF_DIR"]:
+        save_image_diff = True
+        save_image_diff_dir = os.path.join(config["TEST"]["SAVE_IMAGE_DIFF_DIR"], config["EXP_NAME"])
+
+    is_validation = False
+    # checking if it is validation stage
+    if 'validation' in save_image_dir:
+        is_validation = True
+
+    # Calculate the number of iterations per epoch
+    batches = len(test_data_prefetcher)
+    # Interval printing
+    if batches > 100:
+        print_freq = 100
+    else:
+        print_freq = batches
+    # print_freq = 1
+    # The information printed by the progress bar
+    batch_time = AverageMeter("Time", ":6.3f", Summary.SUM) # Summary.** controls what prints at the end of each test cycle
+    psnres = AverageMeter("PSNR", ":4.2f", Summary.AVERAGE)
+    ssimes = AverageMeter("SSIM", ":4.4f", Summary.AVERAGE)
+    mses = AverageMeter("MSE", ":4.4f", Summary.AVERAGE)
+    h1s = AverageMeter("H1", ":4.4f", Summary.AVERAGE)
+    lpipses = AverageMeter("LPIPS", ":4.4f", Summary.AVERAGE)
+    vifs = AverageMeter("VIF", ":4.4f", Summary.AVERAGE)
+    progress = ProgressMeter(len(test_data_prefetcher),
+                             [batch_time, psnres, ssimes, mses, h1s, lpipses, vifs],
+                             prefix=f"Test: ")
+
+    # set the model as validation model
+    g_model.eval()
+
+    with torch.no_grad():
+        # Initialize data batches
+        batch_index = 0
+
+        # Set the data set iterator pointer to 0 and load the first batch of data
+        test_data_prefetcher.reset()
+        batch_data = test_data_prefetcher.next()
+
+        # Record the start time of verifying a batch
+        end = time.time()
+
+        while batch_data is not None:
+            # Load batches of data
+            gt = batch_data["gt"].to(device, non_blocking=True)
+            lr = batch_data["lr"].to(device, non_blocking=True)
+
+            # Reasoning
+            sr = g_model(lr)
+
+            # downsample both for 4x
+            sr = resizer(sr)
+            gt = resizer(gt)
+
+            # Calculate the image sharpness evaluation index
+            psnr = psnr_model(sr, gt)
+            ssim = ssim_model(sr, gt)
+            mse = mse_model(sr, gt)
+            h1 = h1_model(sr, gt)
+            # vif = vif_model(sr, gt)
+            vif = torch.tensor(0.0) # FIXME, was error with kernel size 4x4 vs 5x5
+
+            # LPIPS requires the input images to be in the range of [-1, 1]
+            if not is_data_range_plus_minus_one:
+                # For the Eriksson_Johnson dataset, the input images are in the range of [0, 2]
+                sr = (sr - 1.0) # Convert from [0, 2] to [-1, 1]
+                gt = (gt - 1.0)
+            
+            # LPIPS requires 3 channels, so we need to repeat the channel if it is single channel
+            sr_3ch = sr.repeat(1, 3, 1, 1) if sr.shape[1] == 1 else sr
+            gt_3ch = gt.repeat(1, 3, 1, 1) if gt.shape[1] == 1 else gt
+            lpips = lpips_model(sr_3ch, gt_3ch)
+
+            # record current metrics
+            # psnres.update(psnr.item(), sr.size(0))
+            # ssimes.update(ssim.item(), ssim.size(0))
+            # mses.update(mse.item(), mse.size(0))
+            
+            # the metrics' shapes are always [0], so not calculating the size. Default value of 1 is used from AverageMeter
+            psnres.update(psnr.item())
+            ssimes.update(ssim.item())
+            mses.update(mse.item())
+            h1s.update(h1.item())
+            lpipses.update(lpips.item())
+            vifs.update(vif.item())
+
+            # Record the total time to verify a batch
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            # Output a verification log information
+            if batch_index % print_freq == 0:
+                progress.display(batch_index)
+
+            # Save the processed image after super-resolution
+            if batch_data["image_name"] == "":
+                raise ValueError("The image_name is None, please check the dataset.")
+            if save_image:
+                np_image_name = os.path.basename(batch_data["image_name"][0])
+                image_name = np_image_name.split(".")[0] + ".png" # cannot save as npy
+
+                last_folder = os.path.join(*(batch_data["image_name"][0].split('/')[-2:-1])) # taking the last one folder name
+                save_dir = os.path.join(save_image_dir, last_folder)
+                # create dir
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir)
+                
+                sr_np = sr.cpu().numpy().squeeze(0).squeeze(0)
+
+                # not saving the image as npy during validation
+                if not is_validation:
+                    np.save(os.path.join(save_dir, np_image_name), sr_np)
+                
+                save_as_plot(sr_np, os.path.join(save_dir, image_name))
+
+                # sr_image = tensor_to_image(sr, range_norm=True, half=False) # range_norm=True means converting from [-1, 1] to [0, 1]
+                # sr_image = cv2.cvtColor(sr_image, cv2.COLOR_RGB2BGR)
+                # # retain only R channel
+                # # sr_image = sr_image[:, :, 0]
+                # sr_image[:, :, 0] = sr_image[:, :, 1] = 0 # set G and B channel to 0, taken from https://stackoverflow.com/a/60288650
+                # if not cv2.imwrite(os.path.join(save_dir, image_name), sr_image):
+                #     raise ValueError(f"Save image `{image_name}` failed.")
+                
+            # Save the difference between the processed image and the original image
+            if save_image_diff:
+                file_name = os.path.basename(batch_data["image_name"][0])
+                # file_name = image_name.split(".")[0] + ".txt"
+                file_name = image_name.split(".")[0] + ".png"
+
+                last_folder = os.path.join(*(batch_data["image_name"][0].split('/')[-2:-1])) # taking the last one folder name
+                save_dir = os.path.join(save_image_diff_dir, last_folder)
+                # create dir
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir)
+
+                img_diff = torch.abs(sr - gt)
+                img_diff = img_diff.cpu().numpy()
+
+                img_diff = img_diff.squeeze(0).squeeze(0) # remove batch and channel dimension
+
+                save_as_plot(img_diff, os.path.join(save_dir, file_name))
+                # np.savetxt(os.path.join(save_dir, file_name), img_diff, fmt='%.2e')
+
+            # Preload the next batch of data
+            batch_data = test_data_prefetcher.next()
+
+            # Add 1 to the number of data batches
+            batch_index += 1
+
+    # Print the performance index of the model at the current Epoch
+    progress.display_summary()
+
+    return psnres.avg, ssimes.avg, mses.avg, h1s.avg, lpipses.avg, vifs.avg
+
 def validation(
         g_model: nn.Module,
         test_data_prefetcher: CUDAPrefetcher,
@@ -435,7 +619,7 @@ def main() -> None:
          lpips_model,
          vif_model,
          device,
-         config)
+         config)    
     
     # append the results to a csv file
     csv_path = os.path.join('./results/', "all_test_results.csv")

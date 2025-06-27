@@ -19,6 +19,7 @@ import torch
 from natsort import natsorted
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
+import torchvision.transforms as transforms
 import pandas as pd
 
 from utils import numpy_to_compatible_tensor
@@ -34,7 +35,7 @@ class PairedImageDataset(Dataset):
     def __init__(
             self,
             paired_gt_images_dir: str,
-            paired_lr_images_dir: str,
+            paired_lr_images_dir: str | None,
             has_subfolder: bool = False,
             in_channels: int = 3
     ) -> None:
@@ -46,8 +47,11 @@ class PairedImageDataset(Dataset):
         """
 
         super(PairedImageDataset, self).__init__()
-        if not os.path.exists(paired_lr_images_dir):
-            raise FileNotFoundError(f"Registered low-resolution image address does not exist: {paired_lr_images_dir}")
+        if paired_lr_images_dir is None:
+            print(f"x4 experiment: will downsample the ground truth images to 16x16")
+        else:
+            if not os.path.exists(paired_lr_images_dir):
+                raise FileNotFoundError(f"Registered low-resolution image address does not exist: {paired_lr_images_dir}")
         if not os.path.exists(paired_gt_images_dir):
             raise FileNotFoundError(f"Registered high-resolution image address does not exist: {paired_gt_images_dir}")
 
@@ -59,29 +63,42 @@ class PairedImageDataset(Dataset):
                     self.paired_gt_image_file_names.append(os.path.join(root, file))
 
             self.paired_lr_image_file_names = []
-            for root, _, files in os.walk(paired_lr_images_dir):
-                for file in natsorted(files):
-                    self.paired_lr_image_file_names.append(os.path.join(root, file))
+            if paired_lr_images_dir is None:
+                self.resizer = transforms.Resize((16, 16)) 
+            else:
+                for root, _, files in os.walk(paired_lr_images_dir):
+                    for file in natsorted(files):
+                        self.paired_lr_image_file_names.append(os.path.join(root, file))
             
         else:
             image_files = natsorted(os.listdir(paired_lr_images_dir))
         
             self.paired_gt_image_file_names = [os.path.join(paired_gt_images_dir, x) for x in image_files]
-            self.paired_lr_image_file_names = [os.path.join(paired_lr_images_dir, x) for x in image_files]
+            if paired_lr_images_dir is not None:
+                self.paired_lr_image_file_names = [os.path.join(paired_lr_images_dir, x) for x in image_files]
+            else:
+                self.paired_lr_image_file_names = []
         
         self.in_channels = in_channels
 
     def __getitem__(self, batch_index: int) -> tuple[Tensor, Tensor, str]:
         # Read a batch of image data
         gt_tensor = numpy_to_compatible_tensor(self.paired_gt_image_file_names[batch_index], self.in_channels)
-        lr_tensor = numpy_to_compatible_tensor(self.paired_lr_image_file_names[batch_index], self.in_channels)
+        
+        if len(self.paired_lr_image_file_names) == 0:
+            lr_tensor = self.resizer(gt_tensor)
+        else:
+            lr_tensor = numpy_to_compatible_tensor(self.paired_lr_image_file_names[batch_index], self.in_channels)
 
-        return {"gt": gt_tensor,
-                "lr": lr_tensor,
-                "image_name": self.paired_lr_image_file_names[batch_index]}
+        return {
+            "gt": gt_tensor,
+            "lr": lr_tensor,
+            # "image_name": self.paired_lr_image_file_names[batch_index] # was original developement
+            "image_name": self.paired_gt_image_file_names[batch_index] # done this during x4 experiment; it should work for orginal experiments
+        }
 
     def __len__(self) -> int:
-        return len(self.paired_lr_image_file_names)
+        return len(self.paired_gt_image_file_names)
 
 
 class PrefetchGenerator(threading.Thread):
@@ -202,7 +219,7 @@ class FEMPhyDataset(Dataset):
     def __init__(
             self,
             gt_images_dir: str,
-            lr_images_dir: str,
+            lr_images_dir: str | None,
             has_subfolder: bool = True,
             in_channels: int = 1,
             index_val_file: str = "data/RDA/index-val-mapping.csv",
@@ -219,8 +236,9 @@ class FEMPhyDataset(Dataset):
         # check if the ground truth images folder is empty
         if os.listdir(gt_images_dir) == 0:
             raise RuntimeError("GT image folder is empty.")
-        if os.listdir(lr_images_dir) == 0:
-            raise RuntimeError("LR image folder is empty.")
+        if lr_images_dir is not None:
+            if os.listdir(lr_images_dir) == 0:
+                raise RuntimeError("LR image folder is empty.")
 
         # Read a batch of high- and low-resolution images
         if has_subfolder:
@@ -230,10 +248,16 @@ class FEMPhyDataset(Dataset):
                     self.gt_image_file_names.append(os.path.join(root, file))
 
             self.lr_image_file_names = []
-            for root, _, files in os.walk(lr_images_dir):
-                for file in natsorted(files):
-                    self.lr_image_file_names.append(os.path.join(root, file))
+            if lr_images_dir is None:
+                print(f"x4 experiment: will downsample the ground truth images to 16x16")
+                self.resizer = transforms.Resize((16, 16))
+            else:
+                for root, _, files in os.walk(lr_images_dir):
+                    for file in natsorted(files):
+                        self.lr_image_file_names.append(os.path.join(root, file))
         else:
+            if lr_images_dir is not None:
+                raise NotImplementedError("Not properly handled yet.")
             image_file_names = natsorted(os.listdir(lr_images_dir))
             self.lr_image_file_names = [os.path.join(lr_images_dir, image_file_name) for image_file_name in image_file_names]
             self.gt_image_file_names = [os.path.join(gt_images_dir, image_file_name) for image_file_name in image_file_names]
@@ -246,7 +270,7 @@ class FEMPhyDataset(Dataset):
         # discard the immediate previous frame and the frame before that. These are only required in gt_prev and gt_two_prev of the sample we start with
         discard_samples = [f'u_n{self.start_sample-1:06d}.npy', f'u_n{self.start_sample-2:06d}.npy']
         self.gt_image_file_names = self._remove_first_frames(self.gt_image_file_names, to_remove=discard_samples)
-        if self.lr_image_file_names is not None:
+        if len(self.lr_image_file_names) > 0:
             self.lr_image_file_names = self._remove_first_frames(self.lr_image_file_names, to_remove=discard_samples)
 
     def __getitem__(
@@ -280,7 +304,10 @@ class FEMPhyDataset(Dataset):
         #     gt_tensor_two_prev = numpy_to_compatible_tensor(self.gt_image_file_names[batch_index-2], self.in_channels)
 
         # Read a batch of low-resolution images
-        lr_tensor = numpy_to_compatible_tensor(self.lr_image_file_names[batch_index], self.in_channels)
+        if len(self.lr_image_file_names) > 0:
+            lr_tensor = numpy_to_compatible_tensor(self.lr_image_file_names[batch_index], self.in_channels)
+        else:
+            lr_tensor = self.resizer(gt_tensor)
 
         return {
             "gt": gt_tensor,
