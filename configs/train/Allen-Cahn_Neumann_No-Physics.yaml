@@ -3,7 +3,7 @@
 
 
 # experiment name
-EXP_NAME: Allen-Cahn_Neumann_No-Physics
+EXP_NAME: Allen-Cahn_Neumann_SRGAN
 
 # if using Erikson_Johnson dataset, set to True
 ERIKSON_JOHNSON: False
@@ -57,8 +57,6 @@ TRAIN:
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
     RESUMED_D_MODEL: ""
-    # RESUMED_G_MODEL: ./samples/Allen_Cahn_Periodic_Physics/g_epoch_16.pth.tar
-    # RESUMED_D_MODEL: ./samples/Allen_Cahn_Periodic_Physics/d_epoch_16.pth.tar
 
   # training hyperparameters
   HYP:
@@ -128,3 +126,4 @@ TEST:
   
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""
+  

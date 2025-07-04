@@ -44,3 +44,4 @@ TEST:
   # saving the difference between the ground truth and the prediction
   # SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
   SAVE_IMAGE_DIFF_DIR: ""
+  

@@ -3,7 +3,7 @@
 
 
 # experiment name
-EXP_NAME: Erikson-Johnson_No-Physics
+EXP_NAME: Erikson-Johnson_SRGAN
 
 ERIKSON_JOHNSON: True #doesn't matter as it is used to choose physics loss
 
@@ -56,8 +56,6 @@ TRAIN:
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
     RESUMED_D_MODEL: ""
-    # RESUMED_G_MODEL: ./samples/Erikson-Johnson_No-Physics/g_epoch_16.pth.tar
-    # RESUMED_D_MODEL: ./samples/Erikson-Johnson_No-Physics/d_epoch_16.pth.tar
 
   # training hyperparameters
   HYP:
@@ -128,3 +126,4 @@ TEST:
 
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""
+  

@@ -56,8 +56,6 @@ TRAIN:
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
     RESUMED_D_MODEL: ""
-    # RESUMED_G_MODEL: ./samples/Erikson-Johnson_Physics_larger_weights/g_epoch_5.pth.tar
-    # RESUMED_D_MODEL: ./samples/Erikson-Johnson_Physics_larger_weights/d_epoch_5.pth.tar
 
   # training hyperparameters
   HYP:
@@ -127,3 +125,4 @@ TEST:
   
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""
+  

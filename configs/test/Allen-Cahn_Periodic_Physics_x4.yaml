@@ -10,7 +10,7 @@ SCALE: 4
 # run device model
 DEVICE_ID: 0
 # Model weights path
-MODEL_WEIGHTS_PATH: ./results/Allen-Cahn_Periodic_Physics_BDF_x4/g_best.pth.tar
+MODEL_WEIGHTS_PATH: ./results/Allen-Cahn_Periodic_PC_SRGAN_BDF_x4/g_best.pth.tar
 
 # Model define
 MODEL:
@@ -42,3 +42,4 @@ TEST:
   # saving the difference between the ground truth and the prediction
   # SAVE_IMAGE_DIFF_DIR: ./results/test_diff/
   SAVE_IMAGE_DIFF_DIR: ""
+  

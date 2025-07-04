@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_No-Physics_Subset100
+EXP_NAME: Allen-Cahn_Periodic_SRGAN
 
 ERIKSON_JOHNSON: False #doesn't matter as it is used to choose physics loss
 
@@ -44,8 +44,6 @@ TRAIN:
   DATASET:
     TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_63
     TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_7
-    # TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_63
-    # TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_7
     GT_IMAGE_SIZE: 64
     HAS_SUBFOLDER: True
     INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic/index-val-mapping.csv
@@ -56,8 +54,6 @@ TRAIN:
     PRETRAINED_D_MODEL: ""
     RESUMED_G_MODEL: ""
     RESUMED_D_MODEL: ""
-    # RESUMED_G_MODEL: ./samples/Allen_Cahn_Periodic/g_epoch_71.pth.tar
-    # RESUMED_D_MODEL: ./samples/Allen_Cahn_Periodic/d_epoch_71.pth.tar
 
   # training hyperparameters
   HYP:
@@ -127,3 +123,4 @@ TEST:
 
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""
+  

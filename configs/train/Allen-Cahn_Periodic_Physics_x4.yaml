@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_Physics_BDF_x4
+EXP_NAME: Allen-Cahn_Periodic_PC_SRGAN_BDF_x4
 
 # if using Erikson_Johnson dataset, set to True
 ERIKSON_JOHNSON: False
@@ -43,10 +43,8 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset10/train/mesh_63
+    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_63
     TRAIN_LR_IMAGES_DIR: # empty means None, means downsample
-    # TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_63
-    # TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/Subset80/train/mesh_7
     GT_IMAGE_SIZE: 64
     HAS_SUBFOLDER: True
     INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic/index-val-mapping.csv

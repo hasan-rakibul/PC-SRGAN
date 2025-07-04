@@ -2,7 +2,7 @@
  
 #SBATCH --job-name=PC-SRGAN
 #SBATCH --output=bash_logs/%j_%x.out
-#SBATCH --time=1:00:00
+#SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
@@ -16,9 +16,9 @@ module load pytorch/2.2.0-rocm5.7.3
 # ./train_physics.sh Allen-Cahn_Periodic"
 
 ##### PC-SRGAN_x4
-# singularity exec $SINGULARITY_CONTAINER bash -c "\
-# source .venv/bin/activate && \
-# ./train_physics.sh Allen-Cahn_Periodic_x4"
+singularity exec $SINGULARITY_CONTAINER bash -c "\
+source .venv/bin/activate && \
+./train_physics.sh Allen-Cahn_Periodic_x4"
 
 ##### SRGAN_x4
 # singularity exec $SINGULARITY_CONTAINER bash -c "\
@@ -33,9 +33,9 @@ module load pytorch/2.2.0-rocm5.7.3
 # ./test_physics.sh Allen-Cahn_Periodic"
 
 ################## Test PC-SRGAN_x4 (Periodic) ##################
-# singularity exec $SINGULARITY_CONTAINER bash -c "\
-# source .venv/bin/activate && \
-# ./test_physics.sh Allen-Cahn_Periodic_x4"
+singularity exec $SINGULARITY_CONTAINER bash -c "\
+source .venv/bin/activate && \
+./test_physics.sh Allen-Cahn_Periodic_x4"
 
 ################## Test PC-SRGAN (Neumann) ##################
 # singularity exec $SINGULARITY_CONTAINER bash -c "\
@@ -54,9 +54,9 @@ module load pytorch/2.2.0-rocm5.7.3
 # ./test_no-physics.sh Allen-Cahn_Periodic"
 
 ################## Test SRGAN_x4 (Periodic) ##################
-singularity exec $SINGULARITY_CONTAINER bash -c "\
-source .venv/bin/activate && \
-./test_no-physics.sh Allen-Cahn_Periodic_x4"
+# singularity exec $SINGULARITY_CONTAINER bash -c "\
+# source .venv/bin/activate && \
+# ./test_no-physics.sh Allen-Cahn_Periodic_x4"
 
 ################## Test SRGAN (Neumann) ##################
 # singularity exec $SINGULARITY_CONTAINER bash -c "\
