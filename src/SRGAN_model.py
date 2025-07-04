@@ -212,8 +212,10 @@ class DiscriminatorForVGG(nn.Module):
             out_channels: int = 1,
             channels: int = 64,
             freeze: bool = False,
+            in_size: int = 64 # 64x64 image
     ) -> None:
         super(DiscriminatorForVGG, self).__init__()
+        
         self.features = nn.Sequential(
             # input size. (3) x 96 x 96 ## these calculations are for 96x96 image
             nn.Conv2d(in_channels, channels, (3, 3), (1, 1), (1, 1), bias=True),
@@ -244,21 +246,28 @@ class DiscriminatorForVGG(nn.Module):
             nn.BatchNorm2d(int(8 * channels)),
             nn.LeakyReLU(0.2, True),
         )
-
-        self.classifier = nn.Sequential(
-            # nn.Linear(int(8 * channels) * 6 * 6, 1024), # for 96x96 image
-            nn.Linear(int(8 * channels) * 4 * 4, 1024), # for 48x48 image        
-            nn.LeakyReLU(0.2, True),
-            nn.Linear(1024, out_channels),
-        )
+    
+        if in_size == 64:
+            self.classifier = nn.Sequential(
+                # nn.Linear(int(8 * channels) * 6 * 6, 1024), # for 96x96 image
+                nn.Linear(int(8 * channels) * 4 * 4, 1024),     
+                nn.LeakyReLU(0.2, True),
+                nn.Linear(1024, out_channels),
+            )
+        
+        elif in_size == 32:
+            self.classifier = nn.Sequential(
+                nn.Linear(int(8 * channels) * 2 * 2, 1024),    
+                nn.LeakyReLU(0.2, True),
+                nn.Linear(1024, out_channels),
+            ) 
 
         if freeze:
             freeze_layers(self.features)        
 
     def forward(self, x: Tensor) -> Tensor:
-        # Input image size must equal 96
         # assert x.size(2) == 96 and x.size(3) == 96, "Input image size must be is 96x96"
-        assert x.size(2) == 64 and x.size(3) == 64, "Input image size must be 64x64"
+        assert x.size(2) in [32, 64] and x.size(3) in [32, 64], "Input image size must be 64x64"
 
         x = self.features(x)
         x = torch.flatten(x, 1)

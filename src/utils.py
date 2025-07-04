@@ -13,8 +13,10 @@ def numpy_to_compatible_tensor(file_name: str, in_channels: int) -> torch.Tensor
     """
     input_image = np.load(file_name).astype(np.float32)
     input_tensor = torch.from_numpy(input_image)
-    # the input images has no channel dimension, so add it for compatibility
-    input_tensor = input_tensor.unsqueeze(0)
+
+    # if input images has no channel dimension, add it for compatibility
+    if input_tensor.ndim == 2:
+        input_tensor = input_tensor.unsqueeze(0)
 
     # scaling the input image to [-1, 1]
     # input_tensor = input_tensor / torch.max(torch.abs(input_tensor))

@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_PC_SRGAN_BDF_x4
+EXP_NAME: Allen-Cahn_Periodic_PC_SRGAN_BDF_x4_mesh_7_to_31
 
 # if using Erikson_Johnson dataset, set to True
 ERIKSON_JOHNSON: False
@@ -43,9 +43,10 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_63
-    TRAIN_LR_IMAGES_DIR: # empty means None, means downsample
-    GT_IMAGE_SIZE: 64
+    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_31
+    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_7
+    # TRAIN_LR_IMAGES_DIR: # empty means None, means downsample 64x64 to 16x16
+    GT_IMAGE_SIZE: 32
     HAS_SUBFOLDER: True
     INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic/index-val-mapping.csv
 
@@ -94,7 +95,7 @@ TRAIN:
       FEATURE_NORMALIZE_MEAN: [ 0.485 ]
       FEATURE_NORMALIZE_STD: [ 0.229 ]
       WEIGHT: [ 1.0 ]
-      IN_CHANNELS: 3
+      IN_CHANNELS: 3 # doesn't matter as this is overwritten by loaded model weights; see SRGAN_model.ContentLoss.__init__
     ADVERSARIAL_LOSS:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
@@ -109,8 +110,8 @@ TRAIN:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_63
-    PAIRED_TEST_LR_IMAGES_DIR: 
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_31
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_7
     HAS_SUBFOLDER: True
 
   # Test hyperparameters
@@ -126,3 +127,4 @@ TEST:
   
   # saving the difference between the ground truth and the prediction
   SAVE_IMAGE_DIFF_DIR: ""
+  

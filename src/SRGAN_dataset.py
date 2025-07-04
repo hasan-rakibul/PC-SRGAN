@@ -48,7 +48,7 @@ class PairedImageDataset(Dataset):
 
         super(PairedImageDataset, self).__init__()
         if paired_lr_images_dir is None:
-            print(f"x4 experiment: will downsample the ground truth images to 16x16")
+            print(f"Assuming x4 experiment, with downsampling 64x64 to 16x16")
         else:
             if not os.path.exists(paired_lr_images_dir):
                 raise FileNotFoundError(f"Registered low-resolution image address does not exist: {paired_lr_images_dir}")
@@ -249,7 +249,7 @@ class FEMPhyDataset(Dataset):
 
             self.lr_image_file_names = []
             if lr_images_dir is None:
-                print(f"x4 experiment: will downsample the ground truth images to 16x16")
+                print(f"Assuming x4 experiment, with downsampling 64x64 to 16x16")
                 self.resizer = transforms.Resize((16, 16))
             else:
                 for root, _, files in os.walk(lr_images_dir):

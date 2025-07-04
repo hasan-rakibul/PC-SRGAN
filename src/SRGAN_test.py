@@ -26,7 +26,7 @@ import SRGAN_model
 from SRGAN_dataset import CUDAPrefetcher, PairedImageDataset
 from SRGAN_utils import load_pretrained_state_dict, AverageMeter, ProgressMeter, Summary
 
-from torchmetrics.image import StructuralSimilarityIndexMeasure, PeakSignalNoiseRatio, VisualInformationFidelity
+from torchmetrics.image import StructuralSimilarityIndexMeasure, PeakSignalNoiseRatio
 from torchmetrics.regression import MeanSquaredError
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
@@ -72,7 +72,6 @@ def test(
         mse_model,
         h1_model,
         lpips_model,
-        vif_model,
         device: torch.device,
         config: Any,
 ) -> tuple[float, float, float, float, float, float]:
@@ -114,9 +113,8 @@ def test(
     mses = AverageMeter("MSE", ":4.4f", Summary.AVERAGE)
     h1s = AverageMeter("H1", ":4.4f", Summary.AVERAGE)
     lpipses = AverageMeter("LPIPS", ":4.4f", Summary.AVERAGE)
-    vifs = AverageMeter("VIF", ":4.4f", Summary.AVERAGE)
     progress = ProgressMeter(len(test_data_prefetcher),
-                             [batch_time, psnres, ssimes, mses, h1s, lpipses, vifs],
+                             [batch_time, psnres, ssimes, mses, h1s, lpipses],
                              prefix=f"Test: ")
 
     # set the model as validation model
@@ -146,7 +144,6 @@ def test(
             ssim = ssim_model(sr, gt)
             mse = mse_model(sr, gt)
             h1 = h1_model(sr, gt)
-            vif = vif_model(sr, gt)
 
             # LPIPS requires the input images to be in the range of [-1, 1]
             if not is_data_range_plus_minus_one:
@@ -170,7 +167,6 @@ def test(
             mses.update(mse.item())
             h1s.update(h1.item())
             lpipses.update(lpips.item())
-            vifs.update(vif.item())
 
             # Record the total time to verify a batch
             batch_time.update(time.time() - end)
@@ -238,7 +234,7 @@ def test(
     # Print the performance index of the model at the current Epoch
     progress.display_summary()
 
-    return psnres.avg, ssimes.avg, mses.avg, h1s.avg, lpipses.avg, vifs.avg
+    return psnres.avg, ssimes.avg, mses.avg, h1s.avg, lpipses.avg
 
 def test_pseudo_x4(
         g_model: nn.Module,
@@ -248,7 +244,6 @@ def test_pseudo_x4(
         mse_model,
         h1_model,
         lpips_model,
-        vif_model,
         device: torch.device,
         config: Any,
 ) -> tuple[float, float, float, float, float, float]:
@@ -293,9 +288,8 @@ def test_pseudo_x4(
     mses = AverageMeter("MSE", ":4.4f", Summary.AVERAGE)
     h1s = AverageMeter("H1", ":4.4f", Summary.AVERAGE)
     lpipses = AverageMeter("LPIPS", ":4.4f", Summary.AVERAGE)
-    vifs = AverageMeter("VIF", ":4.4f", Summary.AVERAGE)
     progress = ProgressMeter(len(test_data_prefetcher),
-                             [batch_time, psnres, ssimes, mses, h1s, lpipses, vifs],
+                             [batch_time, psnres, ssimes, mses, h1s, lpipses],
                              prefix=f"Test: ")
 
     # set the model as validation model
@@ -329,8 +323,6 @@ def test_pseudo_x4(
             ssim = ssim_model(sr, gt)
             mse = mse_model(sr, gt)
             h1 = h1_model(sr, gt)
-            # vif = vif_model(sr, gt)
-            vif = torch.tensor(0.0) # FIXME, was error with kernel size 4x4 vs 5x5
 
             # LPIPS requires the input images to be in the range of [-1, 1]
             if not is_data_range_plus_minus_one:
@@ -354,7 +346,6 @@ def test_pseudo_x4(
             mses.update(mse.item())
             h1s.update(h1.item())
             lpipses.update(lpips.item())
-            vifs.update(vif.item())
 
             # Record the total time to verify a batch
             batch_time.update(time.time() - end)
@@ -422,7 +413,7 @@ def test_pseudo_x4(
     # Print the performance index of the model at the current Epoch
     progress.display_summary()
 
-    return psnres.avg, ssimes.avg, mses.avg, h1s.avg, lpipses.avg, vifs.avg
+    return psnres.avg, ssimes.avg, mses.avg, h1s.avg, lpipses.avg
 
 def validation(
         g_model: nn.Module,
@@ -605,26 +596,24 @@ def main() -> None:
     mse_model = MeanSquaredError().to(device)
     h1_model = H1Error().to(device)
     lpips_model = LearnedPerceptualImagePatchSimilarity().to(device)
-    vif_model = VisualInformationFidelity().to(device)
 
     # Load model weights
     g_model = load_pretrained_state_dict(g_model, config["MODEL"]["G"]["COMPILED"], config["MODEL_WEIGHTS_PATH"])
 
-    psnr_avg, ssim_avg, mse_avg, h1_avg, lpips_avg, vif_avg = test(g_model,
+    psnr_avg, ssim_avg, mse_avg, h1_avg, lpips_avg = test(g_model,
          test_data_prefetcher,
          psnr_model,
          ssim_model,
          mse_model,
          h1_model,
          lpips_model,
-         vif_model,
          device,
          config)    
     
     # append the results to a csv file
     csv_path = os.path.join('./results/', "all_test_results.csv")
     with open(csv_path, 'a') as f:
-        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg},{mse_avg},{h1_avg},{lpips_avg},{vif_avg}\n")
+        f.write(f"{config['EXP_NAME']},{psnr_avg},{ssim_avg},{mse_avg},{h1_avg},{lpips_avg}\n")
 
 
 if __name__ == "__main__":

@@ -92,7 +92,7 @@ TRAIN:
       FEATURE_NORMALIZE_MEAN: [ 0.485 ]
       FEATURE_NORMALIZE_STD: [ 0.229 ]
       WEIGHT: [ 1.0 ]
-      IN_CHANNELS: 3
+      IN_CHANNELS: 3 # doesn't matter as this is overwritten by loaded model weights; see SRGAN_model.ContentLoss.__init__
     ADVERSARIAL_LOSS:
       NAME: vanilla
       WEIGHT: [ 0.001 ]
