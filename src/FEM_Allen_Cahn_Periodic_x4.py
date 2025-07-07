@@ -213,11 +213,11 @@ def main():
                     index_val.loc[save_as] = [eps, K, r, theta]
                     Theta_ = theta
                     generate_data(eps, K, r, Theta_, 7, save_as, u_0_ref, save_dir) # generating data for 7x7 mesh
-                    # generate_data(eps, K, r, Theta_, 31, save_as, u_0_ref, save_dir) # generating data for 31x31 mesh
+                    generate_data(eps, K, r, Theta_, 31, save_as, u_0_ref, save_dir) # generating data for 31x31 mesh
 
                     # status update to a log file
                     count += 1
-                    with open(f'{save_dir}/FEM_log_7.txt', 'a') as f:
+                    with open(f'{save_dir}/FEM_log.txt', 'a') as f:
                         f.write(f"eps: {eps}, K: {K}, r: {r}, theta: {theta}\n")
                         f.write(f"Progress: {count}/{total}\n")
                         f.write(f"Time elapsed: {time.time() - start_time}\n")

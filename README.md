@@ -15,8 +15,8 @@ data
 │   ├── test
 ...
 ```
-**Data processing steps (not required if you already have npy files with train/validation/test split):**<br>
-Step 1. Generate the dataset using FEM<br>
+**Data processing steps (not required if you have got npy files with train/validation/test split):**<br>
+Step 1. Generate the dataset using FEM (`src/FEM_xx.py`<br>
 Step 2. Convert the generated vtk files to numpy files using `src/vtk-to-npy.py`<br>
 Step 3. Split the dataset into train, validation, and test sets using `src/split_dataset.py`<br>
 
@@ -49,15 +49,20 @@ My note on using CSIRO Bracewell is [here](https://hasan-rakibul.github.io/csiro
 Inside your preferred directory (e.g.,`/scratch2/<ident>`), you can create a virtual environment (instructions can be found [here](https://hasan-rakibul.github.io/personal-note-git-linux-etc-commands.html)).
 
 ## FeniCS _(only required for generating the dataset)_
-Better to install using conda:
+We found it better to install through conda than pip:
 ```bash
 conda create -n fenics python=3.9.4
 conda activate fenics
-conda install -c conda-forge fenics
+conda install -c conda-forge fenics # or just conda install fenics if using miniforge3
+```
+## vtk _(only required for converting the vtk files to numpy files)_
+Installation through pip was missing `libXrender.so.1`, but it was smooth through conda:
+```bash
+conda install vtk
 ```
 
 ## CSIRO Bracewell
-Python version is **3.9.4**
+Python version was **3.9.4**
 
 ```bash
 module load python/3.9.4

@@ -1,5 +1,5 @@
 import os
-import vtk
+from vtk import vtkXMLUnstructuredGridReader
 from vtk.util.numpy_support import vtk_to_numpy
 import numpy as np
 from natsort import natsorted
@@ -7,7 +7,7 @@ from natsort import natsorted
 def main():
     '''Convert vtk files to numpy image arrays and save them'''
 
-    data_dir = 'data/Allen-Cahn_Neumann/'
+    data_dir = 'data/Allen-Cahn_Periodic_x4/'
 
     vtk_dir = os.path.join(data_dir, 'raw_vtk/')
     if not os.path.exists(data_dir):
@@ -32,7 +32,7 @@ def main():
                 file_with_path = os.path.join(vtk_dir, mesh, folder, file)
                 print('Working on mesh:', mesh, '\tfolder:', folder, '\tFile:', file)
                 
-                reader = vtk.vtkXMLUnstructuredGridReader()
+                reader = vtkXMLUnstructuredGridReader()
                 reader.SetFileName(file_with_path)
                 reader.Update()
                 output = reader.GetOutput()

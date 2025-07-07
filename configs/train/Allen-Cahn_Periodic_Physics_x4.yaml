@@ -2,7 +2,7 @@
 # =========================================================
 
 # experiment name
-EXP_NAME: Allen-Cahn_Periodic_PC_SRGAN_BDF_x4_mesh_7_to_31
+EXP_NAME: Allen-Cahn_Periodic_PC_SRGAN_BDF_x4_FEM_7_to_31
 
 # if using Erikson_Johnson dataset, set to True
 ERIKSON_JOHNSON: False
@@ -43,12 +43,12 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_31
-    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/train/mesh_7
+    TRAIN_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic_x4/train/mesh_31
+    TRAIN_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic_x4/train/mesh_7
     # TRAIN_LR_IMAGES_DIR: # empty means None, means downsample 64x64 to 16x16
     GT_IMAGE_SIZE: 32
     HAS_SUBFOLDER: True
-    INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic/index-val-mapping.csv
+    INDEX_VAL_MAPPING: ./data/Allen-Cahn_Periodic_x4/index-val-mapping.csv
 
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
@@ -110,8 +110,8 @@ TRAIN:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_31
-    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic/validation/mesh_7
+    PAIRED_TEST_GT_IMAGES_DIR: ./data/Allen-Cahn_Periodic_x4/validation/mesh_31
+    PAIRED_TEST_LR_IMAGES_DIR: ./data/Allen-Cahn_Periodic_x4/validation/mesh_7
     HAS_SUBFOLDER: True
 
   # Test hyperparameters
