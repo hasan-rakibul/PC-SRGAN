@@ -1,5 +1,6 @@
 # This source file is mostly developed by Pouria Behnoudfar
 
+import os
 from fenics import *
 from dolfin import *
 import numpy as np
@@ -67,7 +68,7 @@ class PeriodicBoundary(SubDomain):
             y[1] = x[1] - a
 pbc = PeriodicBoundary()
 
-def generate_data(eps, K, r, Theta_, elem_per_dim, save_as, u0_ref):
+def generate_data(eps, K, r, Theta_, elem_per_dim, save_as, u0_ref, save_dir):
 
 
     ###### Problem's Parameters
@@ -131,10 +132,15 @@ def generate_data(eps, K, r, Theta_, elem_per_dim, save_as, u0_ref):
     # Time-stepping
     t = 0
 
-    save_dir = 'data/reaction_diffusion_advection/mesh_' + str(elem_per_dim) + '/' + save_as + '/'
+    save_as = f'{save_dir}/raw_vtk/mesh_' + str(elem_per_dim) + '/' + save_as + '/'
+    if os.path.exists(save_as):
+        print(f"Directory {save_as} already exists. Skipping.")
+        print("Be sure to delete directory half-done, as we are checking on the directoy level only")
+        return
+        
 
     # Create VTK files for visualisation
-    vtkfile_u_n = File(save_dir + 'u_n.pvd')
+    vtkfile_u_n = File(save_as + 'u_n.pvd')
 
     for i_step in range(num_steps):
 
@@ -146,7 +152,6 @@ def generate_data(eps, K, r, Theta_, elem_per_dim, save_as, u0_ref):
         - am/(dt*gamma*af)*u_n*s*dx - (am/gamma-1) *v_n*s*dx)
 
         # Solve variational problem for time step
-        # solve(F == 0, u)
         solve(F == 0, u, solver_parameters={"newton_solver":{"relative_tolerance":1e-6},"newton_solver":{"maximum_iterations":400}})
 
 
@@ -164,6 +169,8 @@ def generate_data(eps, K, r, Theta_, elem_per_dim, save_as, u0_ref):
 
 
 def main():
+    save_dir = 'data/Allen-Cahn_Periodic_x4/'
+
     start_time = time.time()
 
     # only to save index_value pairs
@@ -171,7 +178,7 @@ def main():
 
     ###### Problem's Parameters
 
-    eps_range = np.linspace(1e-0, 20, 20) # diffusion coefficient
+    eps_range = np.linspace(1e-0, 10, 10) # diffusion coefficient
     K_range = np.linspace(1, 7, 7) # reaction rate
 
 
@@ -205,19 +212,19 @@ def main():
                     # storing index_value pairs
                     index_val.loc[save_as] = [eps, K, r, theta]
                     Theta_ = theta
-                    generate_data(eps, K, r, Theta_, 7, save_as,u_0_ref) # generating data for 7x7 mesh
-                    generate_data(eps, K, r, Theta_, 63, save_as,u_0_ref) # generating data for 63x63 mesh
+                    generate_data(eps, K, r, Theta_, 7, save_as, u_0_ref, save_dir) # generating data for 7x7 mesh
+                    # generate_data(eps, K, r, Theta_, 31, save_as, u_0_ref, save_dir) # generating data for 31x31 mesh
 
                     # status update to a log file
                     count += 1
-                    with open('FEM_log.txt', 'a') as f:
+                    with open(f'{save_dir}/FEM_log_7.txt', 'a') as f:
                         f.write(f"eps: {eps}, K: {K}, r: {r}, theta: {theta}\n")
                         f.write(f"Progress: {count}/{total}\n")
                         f.write(f"Time elapsed: {time.time() - start_time}\n")
                         f.write("--------------------------------------------------\n")
 
     # save index_value pairs
-    index_val.to_csv('data/reaction_diffusion_advection/index-val-mapping.csv')
+    index_val.to_csv(f'{save_dir}/index-val-mapping.csv')
 
 if __name__ == "__main__":
     main()
