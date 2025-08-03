@@ -2,14 +2,19 @@
 
 **This repository is the official implementation of the above-titled paper, currently under review for the IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI).**
 
+**The paper also releases [Transient Simulation Datasets Using Allen-Cahn and Eriksson-Johnson Equations](https://doi.org/10.5281/zenodo.15681249).**
+
 &nbsp;
 
 <div align="center">
     <a href="https://arxiv.org/abs/2505.06502">
         <img src="https://img.shields.io/badge/arXiv-2505.06502-b31b1b.svg?style=flat-square">
     </a>
-    <a href="https://arxiv.org/abs/2505.06502">
-        <img src="https://img.shields.io/badge/PDF-paper-b31b1b.svg?style=flat-square">
+    <a href="https://arxiv.org/pdf/2505.06502">
+        <img src="https://img.shields.io/badge/PDF-blue.svg?style=flat-square">
+    </a>
+    <a href="https://doi.org/10.5281/zenodo.16250888">
+        <img src="https://img.shields.io/badge/Dataset-10.5281/zenodo.16250888-blue.svg?style=flat-square">
     </a>
     <a href="https://github.com/hasan-rakibul/PC-SRGAN/stargazers">
         <img src="https://img.shields.io/github/stars/hasan-rakibul/PC-SRGAN?style=flat-square">
@@ -35,7 +40,7 @@
 </div>
 
 ## Important details on using this repository
-1. The dataset is released through [Zenodo](https://doi.org/10.5281/zenodo.15681249). It should be organised as follows:
+1. The dataset needs to have the following structure:
 ```
 data
 ├── Allen-Cahn_Periodic
@@ -62,7 +67,7 @@ bash src/SRGAN_download_weights.sh SRGAN_x8-SRGAN_ImageNet # for 8x upscaling
 bash src/SRGAN_download_weights.sh SRGAN_x4-SRGAN_ImageNet # for 4x upscaling
 ```
 3. To directly test the model, pretrained checkpoints of four experimental setups are available [here in Google Drive](https://drive.google.com/drive/folders/1MkQsvRpItVb7VaShLBVHgFmWQkbcTK1B?usp=sharing). Download and store them as the `results` directory.
-3. Install necessary packages mentioned in `requirements.txt` (tested on both Python version 3.9.4 and 3.10)
+3. Install necessary packages mentioned in `requirements.txt` (tested on both Python version 3.9.4 and 3.10.12)
 4. Check and configure configuration files at `configs/**/*.yaml`
 
 5. Train and test scripts
@@ -80,10 +85,23 @@ sbatch job_physics.sh
 sbatch job_no-physics.sh
 ```
 
-## Guides on setting up and using HPC environment
-This repository was first developed on CSIRO Bracewell. My note on using CSIRO Bracewell is [here](https://hasan-rakibul.github.io/csiro-bracewell-for-deep-learning.html).
-### Creating python virtual environment
+## Setting up the environment
+This repository was first developed on CSIRO Bracewell (`Python 3.9.4`), and later on Pawsey Setonix (`torch 2.4.1` with `ROCm 5.7.3` on `Python 3.10.12`).
+
+### CSIRO Bracewell setup
+My note on using CSIRO Bracewell is [here](https://hasan-rakibul.github.io/csiro-bracewell-for-deep-learning.html).
+
+Python version was **3.9.4**, which can be loaded using the following command:
+```bash
+module load python/3.9.4
+```
 Inside your preferred directory (e.g.,`/scratch2/<ident>`), you can create a virtual environment (instructions can be found [here](https://hasan-rakibul.github.io/personal-note-git-linux-etc-commands.html)).
+
+Install packages:
+```bash
+python -m pip install -r requirements_torch.txt
+python -m pip install -r requirements.txt
+```
 
 ### FeniCS _(only required for generating the dataset)_
 We found it better to install through conda than pip:
@@ -98,19 +116,6 @@ Installation through pip was missing `libXrender.so.1`, but it was smooth throug
 conda install vtk
 ```
 
-### CSIRO Bracewell
-Python version was **3.9.4**
-
-```bash
-module load python/3.9.4
-```
-Creat and activate a virtual environment.
-
-Install packages:
-```bash
-python -m pip install -r requirements_torch.txt
-python -m pip install -r requirements.txt
-```
 ## Citation
 ```bibtex
 @misc{hasan2025pcsrgan,
@@ -135,4 +140,4 @@ python -m pip install -r requirements.txt
 ```
 
 ## Acknowledgement
-We are immensely grateful to the contributors of [SRGAN-PyTorch](https://github.com/Lornatang/SRGAN-PyTorch) based on which we have started developing this codebase.
+We are immensely grateful to the contributors of [SRGAN-PyTorch](https://github.com/Lornatang/SRGAN-PyTorch) based on which we have started developing this codebase. We are also thankful to the contributors of [ESRGAN-PyTorch](https://github.com/Lornatang/ESRGAN-PyTorch), using which we have extended PC-SRGAN to PC-ESRGAN.

@@ -4,7 +4,7 @@
 + bash_logs/**
 + results/all_test_results.csv
 + samples/logs/**
-+ .rclone.sh
++ not-required/**
 
 # exclue-everything
 - *

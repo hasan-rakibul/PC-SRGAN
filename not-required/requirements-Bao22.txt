@@ -1,5 +1,0 @@
-tensorflow==1.15
-numpy
-scikit-learn
-matplotlib
-vtk

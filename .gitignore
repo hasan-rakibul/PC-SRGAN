@@ -6,7 +6,11 @@ data/*
 !data/.gitkeep
 
 samples/
+
 results/
+!results/*.png
+
+not-required/
 almost_unnecessary/
 
 *.pth.tar
