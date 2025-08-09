@@ -1,6 +1,6 @@
 # PC-SRGAN: Physically Consistent Super-Resolution Generative Adversarial Network for General Transient Simulations
 
-**This repository is the official implementation of the above-titled paper, currently under review for the IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI).**
+**This repository is the official implementation of the above-titled article, published in the _IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI)_.**
 
 **The paper also releases [Transient Simulation Datasets Using Allen-Cahn and Eriksson-Johnson Equations](https://doi.org/10.5281/zenodo.15681249).**
 
@@ -10,7 +10,7 @@
     <a href="https://arxiv.org/abs/2505.06502">
         <img src="https://img.shields.io/badge/arXiv-2505.06502-b31b1b.svg?style=flat-square">
     </a>
-    <a href="https://arxiv.org/pdf/2505.06502">
+    <a href="https://hasan-rakibul.github.io/pdfs/hasan2025pc-srgan.pdf">
         <img src="https://img.shields.io/badge/PDF-blue.svg?style=flat-square">
     </a>
     <a href="https://doi.org/10.5281/zenodo.16250888">
@@ -118,15 +118,16 @@ conda install vtk
 
 ## Citation
 ```bibtex
-@misc{hasan2025pcsrgan,
-    title={PC-SRGAN: Physically Consistent Super-Resolution Generative Adversarial Network for General Transient Simulations}, 
-    author={Md Rakibul Hasan and Pouria Behnoudfar and Dan MacKinlay and Thomas Poulet},
+@article{hasan2025pcsrgan,
+    author={Hasan, Md Rakibul and Behnoudfar, Pouria and MacKinlay, Dan and Poulet, Thomas},
+    journal={IEEE Transactions on Pattern Analysis and Machine Intelligence}, 
+    title={{PC}-{SRGAN}: Physically Consistent Super-Resolution Generative Adversarial Network for General Transient Simulations}, 
     year={2025},
-    eprint={2505.06502},
-    archivePrefix={arXiv},
-    primaryClass={eess.IV},
-    url={https://arxiv.org/abs/2505.06502}, 
-}
+    volume={},
+    number={},
+    pages={1--8},
+    doi={10.1109/TPAMI.2025.3596647}
+
 
 @dataset{hasan2025transient,
     author       = {Hasan, Md Rakibul and Behnoudfar, Pouria and Mackinlay, Dan and Poulet, Thomas},
