@@ -2,19 +2,22 @@
 
 **This repository is the official implementation of the above-titled article, published in the _IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI)_.**
 
-**The paper also releases [Transient Simulation Datasets Using Allen-Cahn and Eriksson-Johnson Equations](https://doi.org/10.5281/zenodo.15681249).**
+**We also release [Transient Simulation Datasets Using Allen-Cahn and Eriksson-Johnson Equations](https://doi.org/10.5281/zenodo.15681249), associated with this work.**
 
 &nbsp;
 
 <div align="center">
-    <a href="https://arxiv.org/abs/2505.06502">
-        <img src="https://img.shields.io/badge/arXiv-2505.06502-b31b1b.svg?style=flat-square">
+    <a href=https://doi.org/10.1109/TPAMI.2025.3596647>
+        <img src="https://img.shields.io/badge/IEEE_Xplore-TPAMI.2025.3596647-blue.svg?style=flat-square">
     </a>
     <a href="https://hasan-rakibul.github.io/pdfs/hasan2025pc-srgan.pdf">
-        <img src="https://img.shields.io/badge/PDF-blue.svg?style=flat-square">
+        <img src="https://img.shields.io/badge/PDF-Article + Appendices-blue.svg?style=flat-square">
     </a>
     <a href="https://doi.org/10.5281/zenodo.16250888">
         <img src="https://img.shields.io/badge/Dataset-10.5281/zenodo.16250888-blue.svg?style=flat-square">
+    </a>
+    <a href="https://arxiv.org/abs/2505.06502">
+        <img src="https://img.shields.io/badge/arXiv-2505.06502-b31b1b.svg?style=flat-square">
     </a>
     <a href="https://github.com/hasan-rakibul/PC-SRGAN/stargazers">
         <img src="https://img.shields.io/github/stars/hasan-rakibul/PC-SRGAN?style=flat-square">
