@@ -1,8 +1,10 @@
 # include things we need
 + OTHERS/**
 + data/*.tar.gz
++ data/*.zip
 + bash_logs/**
 + results/all_test_results.csv
++ results/**/*.pth.tar
 + samples/logs/**
 + not-required/**
 
