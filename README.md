@@ -126,11 +126,11 @@ conda install vtk
     journal={IEEE Transactions on Pattern Analysis and Machine Intelligence}, 
     title={{PC}-{SRGAN}: Physically Consistent Super-Resolution Generative Adversarial Network for General Transient Simulations}, 
     year={2025},
-    volume={},
-    number={},
-    pages={1--8},
+    volume={47},
+    number={12},
+    pages={12077-12083},
     doi={10.1109/TPAMI.2025.3596647}
-
+}
 
 @dataset{hasan2025transient,
     author       = {Hasan, Md Rakibul and Behnoudfar, Pouria and Mackinlay, Dan and Poulet, Thomas},
